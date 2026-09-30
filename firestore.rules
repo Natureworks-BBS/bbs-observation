@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+
+    // ---- ตัวเลือก: จำกัดให้เฉพาะอีเมลบริษัทเท่านั้น (เอา // ออกแล้วแก้โดเมน) ----
+    // function allowedUser() {
+    //   return signedIn()
+    //     && request.auth.token.email_verified == true
+    //     && request.auth.token.email.matches('.*@yourcompany[.]com');
+    // }
+    // แล้วเปลี่ยน signedIn() ในกฎด้านล่างทั้งหมดเป็น allowedUser()
+
+    // โปรไฟล์ผู้ใช้: ดูได้ทุกคนที่ล็อกอิน แก้ได้เฉพาะของตัวเอง
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && request.auth.uid == uid;
+      allow delete: if false;
+    }
+
+    // แผนก: ทุกคนอ่านได้ (ใช้ตอนสมัคร) / คนที่ล็อกอินเพิ่มได้ / ห้ามแก้-ลบ
+    match /departments/{id} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() < 80;
+      allow update, delete: if false;
+    }
+
+    // รายการสังเกต + Action Plan: คนที่ล็อกอินอ่านได้ทั้งหมด
+    // แก้ไขได้ทุกคนที่ล็อกอิน (เพื่อให้ผู้รับผิดชอบอัปเดตสถานะได้) / ลบได้เฉพาะผู้สร้าง
+    match /observations/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.createdBy == request.auth.uid;
+      allow update: if signedIn();
+      allow delete: if signedIn() && resource.data.createdBy == request.auth.uid;
+    }
+  }
+}

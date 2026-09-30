@@ -1,0 +1,2016 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BBS Observation — ระบบสังเกตพฤติกรรมความปลอดภัย</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --font-head: "Barlow Semi Condensed", "Segoe UI", Tahoma, sans-serif;
+    --font-body: "Inter", "Segoe UI", Tahoma, sans-serif;
+
+    --ink: #16212F;
+    --ink-soft: #3E4A58;
+    --steel: #667080;
+    --paper: #F1F2ED;
+    --surface: #FFFFFF;
+    --surface-2: #F7F7F4;
+    --line: #DBDCD3;
+    --line-strong: #C3C5B9;
+
+    --amber: #E9A23B;
+    --amber-ink: #7A4B04;
+    --amber-bg: #FCF0DA;
+
+    --green: #2E7D52;
+    --green-bg: #E3F2E9;
+
+    --red: #C1402A;
+    --red-bg: #FBE6E1;
+
+    --blue: #2E6C8E;
+    --blue-bg: #E6EFF4;
+
+    --grey-bg: #ECEDE8;
+
+    --radius-s: 4px;
+    --radius-m: 8px;
+
+    color-scheme: light;
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --ink: #ECEEF0;
+      --ink-soft: #C7CCD3;
+      --steel: #96A0AC;
+      --paper: #14181D;
+      --surface: #1B2027;
+      --surface-2: #20262E;
+      --line: #2C333C;
+      --line-strong: #3A4249;
+      --amber-bg: #3A2C10;
+      --amber-ink: #F2C87B;
+      --green-bg: #16301F;
+      --red-bg: #3A1912;
+      --blue-bg: #17252E;
+      --grey-bg: #232A32;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #ECEEF0;
+    --ink-soft: #C7CCD3;
+    --steel: #96A0AC;
+    --paper: #14181D;
+    --surface: #1B2027;
+    --surface-2: #20262E;
+    --line: #2C333C;
+    --line-strong: #3A4249;
+    --amber-bg: #3A2C10;
+    --amber-ink: #F2C87B;
+    --green-bg: #16301F;
+    --red-bg: #3A1912;
+    --blue-bg: #17252E;
+    --grey-bg: #232A32;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  img { max-width: 100%; }
+  button { font-family: inherit; }
+  input, select, textarea { font-family: inherit; font-size: 14px; }
+
+  h1, h2, h3, .head {
+    font-family: var(--font-head);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    margin: 0;
+    color: var(--ink);
+  }
+
+  /* ---------- Top bar ---------- */
+  #topbar {
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    height: 56px;
+    padding: 0 16px;
+    background: var(--ink);
+    color: #F5F1E6;
+  }
+  #topbar .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+  #topbar .brand .mark {
+    width: 30px; height: 30px;
+    border-radius: 6px;
+    background: var(--amber);
+    color: #2A1B02;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 15px;
+    flex: none;
+  }
+  #topbar .brand .titles { min-width: 0; }
+  #topbar .brand .titles .t1 {
+    font-family: var(--font-head);
+    font-weight: 600;
+    font-size: 17px;
+    line-height: 1.1;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #topbar .brand .titles .t2 {
+    font-size: 11px;
+    color: #B7BFC9;
+    white-space: nowrap;
+  }
+  #hamburger {
+    display: none;
+    background: none; border: none; color: #F5F1E6;
+    font-size: 20px; cursor: pointer; padding: 6px;
+  }
+  #userchip {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 999px;
+    padding: 4px 12px 4px 4px;
+    cursor: pointer;
+    color: inherit;
+    flex: none;
+  }
+  #userchip .av {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--amber); color: #2A1B02;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; flex: none;
+    overflow: hidden;
+  }
+  #userchip .av img { width: 100%; height: 100%; object-fit: cover; }
+  #userchip .meta { text-align: left; line-height: 1.15; min-width: 0; }
+  #userchip .meta .nm { font-size: 12.5px; font-weight: 600; white-space: nowrap; max-width: 140px; overflow:hidden; text-overflow: ellipsis; }
+  #userchip .meta .dp { font-size: 11px; color: #B7BFC9; white-space: nowrap; max-width: 140px; overflow:hidden; text-overflow: ellipsis;}
+
+  /* ---------- Shell layout ---------- */
+  #shell { display: flex; min-height: calc(100% - 56px); }
+  #nav {
+    width: 220px; flex: none;
+    background: var(--surface);
+    border-right: 1px solid var(--line);
+    padding: 18px 10px;
+  }
+  #nav button.navitem {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; text-align: left;
+    background: none; border: none;
+    padding: 10px 12px; margin-bottom: 2px;
+    border-radius: var(--radius-s);
+    font-size: 14px; font-weight: 500;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  #nav button.navitem .ic { width: 18px; text-align: center; font-size: 15px; }
+  #nav button.navitem:hover { background: var(--surface-2); }
+  #nav button.navitem.active { background: var(--amber-bg); color: var(--amber-ink); font-weight: 600; }
+  #nav .navdivider { height: 1px; background: var(--line); margin: 10px 4px; }
+  #nav .navfoot { padding: 10px 12px; font-size: 11.5px; color: var(--steel); }
+
+  #navscrim { display: none; }
+
+  main#content { flex: 1; min-width: 0; padding: 20px; padding-bottom: 60px; }
+  .wrap { max-width: 980px; margin: 0 auto; }
+
+  @media (max-width: 860px) {
+    #hamburger { display: inline-block; }
+    #nav {
+      position: fixed; top: 56px; bottom: 0; left: 0; z-index: 50;
+      transform: translateX(-100%);
+      transition: transform .2s ease;
+      box-shadow: 2px 0 12px rgba(0,0,0,0.15);
+      overflow-y: auto;
+      padding-top: calc(18px + env(safe-area-inset-top, 0px));
+    }
+    #nav.open { transform: translateX(0); }
+    #navscrim.open {
+      display: block; position: fixed; inset: 56px 0 0 0; z-index: 45;
+      background: rgba(0,0,0,0.35);
+    }
+    main#content { padding: 14px; }
+    #userchip .meta { display: none; }
+  }
+
+  /* ---------- Generic bits ---------- */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    border-radius: var(--radius-s);
+    border: 1px solid var(--line-strong);
+    background: var(--surface);
+    color: var(--ink);
+    padding: 9px 16px;
+    font-size: 13.5px; font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--surface-2); }
+  .btn.primary { background: var(--ink); border-color: var(--ink); color: #F5F1E6; }
+  .btn.primary:hover { background: #232F3D; }
+  .btn.amber { background: var(--amber); border-color: var(--amber); color: #2A1B02; }
+  .btn.amber:hover { filter: brightness(1.04); }
+  .btn.ghost { background: transparent; border-color: transparent; }
+  .btn.danger { color: var(--red); border-color: var(--red-bg); }
+  .btn.small { padding: 6px 10px; font-size: 12.5px; }
+  .btn:disabled { opacity: .5; cursor: default; }
+
+  label.field-label {
+    display: block; font-size: 12px; font-weight: 600;
+    color: var(--steel); margin-bottom: 4px;
+  }
+  input[type=text], input[type=date], input[type=number], select, textarea {
+    width: 100%;
+    border: 1px solid var(--line-strong);
+    background: var(--surface);
+    color: var(--ink);
+    border-radius: var(--radius-s);
+    padding: 8px 10px;
+  }
+  textarea { resize: vertical; min-height: 46px; }
+  input:focus, select:focus, textarea:focus, button:focus-visible {
+    outline: 2px solid var(--blue); outline-offset: 1px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-m);
+    padding: 16px;
+  }
+
+  .section-title {
+    font-family: var(--font-head);
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--steel);
+    margin: 26px 0 10px;
+  }
+  .section-title:first-child { margin-top: 0; }
+
+  .pill {
+    display: inline-flex; align-items: center;
+    border-radius: 999px; padding: 2px 10px;
+    font-size: 11.5px; font-weight: 600;
+  }
+  .pill.grey { background: var(--grey-bg); color: var(--steel); }
+  .pill.amber { background: var(--amber-bg); color: var(--amber-ink); }
+  .pill.green { background: var(--green-bg); color: var(--green); }
+  .pill.red { background: var(--red-bg); color: var(--red); }
+  .pill.blue { background: var(--blue-bg); color: var(--blue); }
+
+  .empty {
+    text-align: center; padding: 50px 20px; color: var(--steel);
+  }
+  .empty .big { font-size: 34px; margin-bottom: 6px; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+    background: var(--ink); color: #F5F1E6;
+    padding: 10px 18px; border-radius: 999px; font-size: 13px;
+    z-index: 100; box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+
+  /* ---------- Login ---------- */
+  #loginwrap {
+    min-height: calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .loginhead { background: var(--ink); }
+  .logincard {
+    width: 100%; max-width: 420px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-m);
+    padding: 28px 26px 24px;
+  }
+  .logincard .brandbar {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 18px;
+  }
+  .logincard .brandbar .mark {
+    width: 34px; height: 34px; border-radius: 7px; background: var(--amber);
+    color: #2A1B02; display:flex; align-items:center; justify-content:center;
+    font-family: var(--font-head); font-weight: 700; font-size: 17px;
+  }
+  .logincard h1 { font-size: 21px; margin-bottom: 2px; }
+  .logincard .sub { font-size: 13px; color: var(--steel); margin-bottom: 20px; }
+  .identity-detected {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface-2); border: 1px solid var(--line);
+    border-radius: var(--radius-s); padding: 10px 12px; margin-bottom: 16px;
+  }
+  .identity-detected .av {
+    width: 34px; height: 34px; border-radius: 50%; flex: none; overflow: hidden;
+    background: var(--amber); color:#2A1B02; display:flex;align-items:center;justify-content:center;
+    font-weight: 700; font-size: 13px;
+  }
+  .identity-detected .av img { width:100%; height:100%; object-fit: cover; }
+  .identity-detected .nm { font-weight: 600; font-size: 14px; }
+  .identity-detected .lb { font-size: 11px; color: var(--steel); }
+  .field { margin-bottom: 14px; }
+  .adddept-row { display: flex; gap: 8px; margin-top: 8px; }
+  .adddept-row input { flex: 1; }
+  .notice {
+    font-size: 12px; color: var(--amber-ink); background: var(--amber-bg);
+    border-radius: var(--radius-s); padding: 8px 10px; margin-bottom: 14px;
+  }
+
+  /* ---------- Dashboard ---------- */
+  .toolbar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .toolbar select { width: auto; }
+  .toolbar .spacer { flex: 1; }
+  .seg {
+    display: inline-flex; border: 1px solid var(--line-strong); border-radius: var(--radius-s); overflow: hidden;
+  }
+  .seg button {
+    border: none; background: var(--surface); color: var(--ink-soft);
+    padding: 7px 13px; font-size: 12.5px; font-weight: 600; cursor: pointer;
+    border-right: 1px solid var(--line-strong);
+  }
+  .seg button:last-child { border-right: none; }
+  .seg button.active { background: var(--ink); color: #F5F1E6; }
+
+  .obslist { display: flex; flex-direction: column; gap: 10px; }
+  .obscard {
+    display: flex; gap: 14px; align-items: stretch;
+    background: var(--surface); border: 1px solid var(--line);
+    border-left: 4px solid var(--line-strong);
+    border-radius: var(--radius-s);
+    padding: 12px 14px; cursor: pointer;
+  }
+  .obscard:hover { border-color: var(--line-strong); background: var(--surface-2); }
+  .obscard.status-open { border-left-color: var(--amber); }
+  .obscard.status-closed { border-left-color: var(--green); }
+  .obscard .main { flex: 1; min-width: 0; }
+  .obscard .row1 { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom: 4px;}
+  .obscard .title { font-weight: 700; font-size: 14.5px; }
+  .obscard .meta { font-size: 12px; color: var(--steel); }
+  .obscard .stats { display:flex; gap:14px; align-items:center; flex:none; }
+  .obscard .stat { text-align:center; min-width: 40px; }
+  .obscard .stat b { display:block; font-size: 16px; font-family: var(--font-head); }
+  .obscard .stat span { font-size: 10px; color: var(--steel); }
+
+  /* ---------- Observation form ---------- */
+  .formgrid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px 16px;
+  }
+  @media (max-width: 640px) { .formgrid { grid-template-columns: 1fr; } }
+
+  .totalsbar {
+    display: flex; gap: 10px; margin: 14px 0 4px; flex-wrap: wrap;
+  }
+  .totalsbar .tchip {
+    flex: 1; min-width: 90px; text-align: center;
+    border-radius: var(--radius-s); padding: 8px 6px;
+    font-family: var(--font-head);
+  }
+  .totalsbar .tchip b { display:block; font-size: 22px; line-height:1; }
+  .totalsbar .tchip span { font-size: 11px; }
+  .totalsbar .tchip.safe { background: var(--green-bg); color: var(--green); }
+  .totalsbar .tchip.unsafe { background: var(--red-bg); color: var(--red); }
+  .totalsbar .tchip.na { background: var(--grey-bg); color: var(--steel); }
+
+  .accordion-controls { display: flex; justify-content: flex-end; gap: 8px; margin: 16px 0 6px; }
+
+  .category {
+    border: 1px solid var(--line); border-radius: var(--radius-s);
+    margin-bottom: 8px; overflow: hidden;
+  }
+  .category .cathead {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; background: var(--surface-2); cursor: pointer;
+    user-select: none;
+  }
+  .category .cathead .chv { font-size: 11px; color: var(--steel); transition: transform .15s; flex: none; }
+  .category.open .cathead .chv { transform: rotate(90deg); }
+  .category .cathead .names { flex: 1; min-width:0; }
+  .category .cathead .n1 { font-weight: 700; font-size: 13.5px; }
+  .category .cathead .n2 { font-size: 11.5px; color: var(--steel); }
+  .category .cathead .badges { display:flex; gap:6px; flex:none; }
+  .category .catbody { display: none; padding: 4px 12px 10px; }
+  .category.open .catbody { display: block; }
+
+  .item-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0; border-top: 1px solid var(--line);
+    flex-wrap: wrap;
+  }
+  .item-row:first-child { border-top: none; }
+  .item-row .itxt { flex: 1 1 220px; min-width: 180px; font-size: 13px; }
+  .item-row .itxt .en { font-weight: 500; }
+  .item-row .itxt .th { color: var(--steel); font-size: 12px; }
+  .item-row .itog { display: inline-flex; border: 1px solid var(--line-strong); border-radius: var(--radius-s); overflow: hidden; flex: none; }
+  .item-row .itog button {
+    border: none; background: var(--surface); padding: 6px 10px;
+    font-size: 12px; font-weight: 700; cursor: pointer; border-right: 1px solid var(--line-strong);
+    color: var(--ink-soft);
+  }
+  .item-row .itog button:last-child { border-right: none; }
+  .item-row .itog button.sel-S { background: var(--green); color: #fff; }
+  .item-row .itog button.sel-U { background: var(--red); color: #fff; }
+  .item-row .itog button.sel-NA { background: var(--steel); color: #fff; }
+  .item-row .itog button.sel-B { background: var(--steel); color: #fff; }
+  .item-row .icmt { flex: 1 1 180px; min-width: 140px; }
+  .item-row .icmt input { padding: 6px 8px; font-size: 12.5px; }
+
+  .apn-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  .apn-table th { text-align: left; font-size: 11px; color: var(--steel); font-weight: 600; padding: 4px 6px; }
+  .apn-table td { padding: 5px 6px; vertical-align: top; }
+  .apn-table tr + tr td { border-top: 1px solid var(--line); }
+  .apn-table input, .apn-table select { font-size: 12.5px; padding: 6px 8px; }
+  .apn-meta { font-size: 10.5px; color: var(--steel); margin-top: 3px; }
+
+  .formfoot {
+    position: sticky; bottom: 0;
+    background: linear-gradient(to top, var(--paper) 70%, transparent);
+    padding: 16px 0 4px; margin-top: 12px;
+    display: flex; justify-content: flex-end; gap: 10px;
+  }
+
+  /* ---------- Tracker table ---------- */
+  .tracktable { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .tracktable th {
+    text-align: left; font-size: 11px; color: var(--steel); font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    padding: 8px; border-bottom: 1px solid var(--line-strong);
+  }
+  .tracktable td { padding: 9px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .tracktable tr:hover td { background: var(--surface-2); }
+
+  /* ---------- Departments ---------- */
+  .deptlist { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+  .deptrow {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-s);
+    background: var(--surface);
+  }
+  .deptrow .nm { font-weight: 600; font-size: 13.5px; }
+  .deptrow .nmth { color: var(--steel); font-size: 12px; margin-left: 6px; }
+
+  #loading-screen {
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 10px; color: var(--steel); font-size: 13px;
+  }
+  .spinner {
+    width: 26px; height: 26px; border-radius: 50%;
+    border: 3px solid var(--line); border-top-color: var(--amber);
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .backlink { display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--steel); background:none; border:none; cursor:pointer; padding:4px 0; margin-bottom:10px; }
+
+  /* ---------- Reminder banner ---------- */
+  #reminderbar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    background: var(--amber-bg); color: var(--amber-ink);
+    padding: 9px 16px; font-size: 12.5px; font-weight: 600;
+    border-bottom: 1px solid var(--line);
+  }
+  #reminderbar.overdue { background: var(--red-bg); color: var(--red); }
+  #reminderbar button { background: none; border: none; color: inherit; font-weight: 700; cursor: pointer; text-decoration: underline; padding: 0; }
+  #reminderbar .rb-x { margin-left: auto; background:none; border:none; cursor:pointer; color: inherit; font-size: 15px; text-decoration:none; }
+
+  /* ---------- Reports ---------- */
+  .kpirow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
+  @media (max-width: 720px) { .kpirow { grid-template-columns: repeat(2, 1fr); } }
+  .kpi {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-m);
+    padding: 14px 16px;
+  }
+  .kpi .kv { font-family: var(--font-head); font-size: 26px; font-weight: 700; line-height: 1; }
+  .kpi .kl { font-size: 11.5px; color: var(--steel); margin-top: 4px; }
+  .kpi.safe .kv { color: var(--green); }
+  .kpi.unsafe .kv { color: var(--red); }
+  .kpi.barrier .kv { color: var(--steel); }
+  .kpi.total .kv { color: var(--blue); }
+
+  .chartgrid { display: grid; grid-template-columns: 1.1fr 1.4fr; gap: 16px; margin-bottom: 18px; }
+  @media (max-width: 860px) { .chartgrid { grid-template-columns: 1fr; } }
+  .chartcard { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-m); padding: 16px; }
+  .chartcard h3 { font-size: 13.5px; margin-bottom: 12px; }
+  .chartcard .chartwrap { position: relative; height: 240px; }
+
+  .rankrow { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-top: 1px solid var(--line); font-size: 12.5px; }
+  .rankrow:first-child { border-top: none; }
+  .rankrow .rn { width: 20px; flex: none; font-family: var(--font-head); font-weight: 700; color: var(--steel); }
+  .rankrow .rt { flex: 1; min-width: 0; }
+  .rankrow .rt .en { font-weight: 600; }
+  .rankrow .rt .cat { font-size: 11px; color: var(--steel); }
+  .rankrow .rc { flex: none; font-family: var(--font-head); font-weight: 700; color: var(--red); font-size: 15px; }
+  .rankrow .rbar { height: 5px; border-radius: 3px; background: var(--red); margin-top: 3px; }
+
+  /* ---------- Auth ---------- */
+  .authtabs { display:flex; border:1px solid var(--line-strong); border-radius: var(--radius-s); overflow:hidden; margin-bottom:18px; }
+  .authtabs button { flex:1; border:none; background: var(--surface); color: var(--ink-soft); padding:9px; font-weight:600; font-size:13.5px; cursor:pointer; }
+  .authtabs button.active { background: var(--ink); color:#F5F1E6; }
+  .orline { display:flex; align-items:center; gap:10px; margin:14px 0; color: var(--steel); font-size:12px; }
+  .orline::before, .orline::after { content:""; flex:1; height:1px; background: var(--line); }
+
+  /* ---------- CSS charts ---------- */
+  .donutbox { display:flex; align-items:center; justify-content:center; gap:26px; flex-wrap:wrap; height:100%; }
+  .donut { width:170px; height:170px; border-radius:50%; display:grid; place-items:center; flex:none; }
+  .donut-hole { width:62%; height:62%; border-radius:50%; background: var(--surface); display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .donut-hole b { font-family: var(--font-head); font-size:30px; line-height:1; }
+  .donut-hole span { font-size:11px; color: var(--steel); }
+  .legend { display:flex; flex-direction:column; gap:8px; font-size:13px; }
+  .legend i { display:inline-block; width:11px; height:11px; border-radius:3px; margin-right:8px; }
+  .legend b { margin-left:6px; font-family: var(--font-head); font-size:16px; }
+  .legend em { font-style:normal; color: var(--steel); font-size:12px; margin-left:4px; }
+  .vbars { display:flex; align-items:flex-end; gap:10px; height:100%; overflow-x:auto; padding-bottom:2px; }
+  .vbar { flex:1; min-width:56px; max-width:120px; display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end; }
+  .vplot { height:180px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; width:100%; }
+  .vval { font-family: var(--font-head); font-weight:700; font-size:14px; margin-bottom:3px; }
+  .vcol { width:70%; max-width:46px; border-radius:4px 4px 0 0; }
+  .vlab { font-size:11.5px; color: var(--ink-soft); margin-top:6px; text-align:center; width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border-top:1px solid var(--line); padding-top:4px; }
+  .hbars { display:flex; flex-direction:column; gap:9px; }
+  .hrow { display:grid; grid-template-columns: minmax(120px, 34%) 1fr 38px; align-items:center; gap:10px; }
+  .hlab { font-size:12.5px; line-height:1.25; min-width:0; }
+  .hlab small { display:block; color: var(--steel); font-size:11px; }
+  .htrack { background: var(--grey-bg); border-radius:4px; height:16px; overflow:hidden; }
+  .hfill { height:100%; background: var(--red); border-radius:4px; }
+  .hval { font-family: var(--font-head); font-weight:700; text-align:right; }
+  @media (max-width:640px) { .hrow { grid-template-columns: 1fr 34px; } .hlab { grid-column: 1 / -1; } .htrack { grid-column: 1; } }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div id="loading-screen">
+    <div class="spinner"></div>
+    <div>กำลังโหลด… / Loading…</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Firebase (compat SDK: works on GitHub Pages with no build step) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<!-- Your Firebase project settings live in this file -->
+<script src="firebase-config.js"></script>
+<!-- Excel export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(function () {
+"use strict";
+
+/* ============================================================
+   CHECKLIST DATA — 26 categories, 90 items (bilingual TH/EN)
+   ============================================================ */
+const CATS = [
+  ["HEAD PROTECTION","การป้องกันศีรษะ",[["Hard Hat","หมวกนิรภัย"]]],
+  ["EYE PROTECTION","การป้องกันดวงตา",[
+    ["Safety Glasses with Side Shields","แว่นตานิรภัยแบบมีแผ่นกันด้านข้าง"],
+    ["Face Shield","กระบังหน้า"],
+    ["MonoGoggles","แว่นครอบตา (Mono Goggles)"]]],
+  ["EAR PROTECTION","การป้องกันหู",[["Ear Plugs / Muffs","ปลั๊กอุดหู / ที่ครอบหู"]]],
+  ["HANDS AND BODY","มือและร่างกาย",[
+    ["Proper Gloves","ถุงมือที่เหมาะสม"],
+    ["Proper Clothing","เสื้อผ้าที่เหมาะสม"],
+    ["Eyes on Task","จดจ่อกับงานที่ทำ"]]],
+  ["ELEVATED WORK","งานที่สูง",[
+    ["100% Fall Protection","ป้องกันการตกทั้งหมด 100%"],
+    ["Proper Anchor","จุดยึดที่เหมาะสม"],
+    ["Ladder Use","การใช้บันได"],
+    ["Fall Prevent Plan","แผนป้องกันการตก"]]],
+  ["RESPIRATORY PROTECTION","การป้องกันระบบทางเดินหายใจ",[["Proper Respirator for Task","หน้ากากป้องกันระบบหายใจที่เหมาะสมกับงาน"]]],
+  ["ERGONOMICS","การยศาสตร์",[
+    ["Chair Placement/Height","ตำแหน่ง/ความสูงเก้าอี้"],
+    ["Keyboard Placement","ตำแหน่งคีย์บอร์ด"],
+    ["Monitor Placement / Height","ตำแหน่ง/ความสูงจอมอนิเตอร์"],
+    ["Phone Placement","ตำแหน่งโทรศัพท์"],
+    ["Headset Usage","การใช้เฮดเซ็ต"],
+    ["Proper Lighting","แสงสว่างที่เหมาะสม"]]],
+  ["STRAINING","การออกแรง",[["Pulling","การดึง"],["Pushing","การผลัก"]]],
+  ["OVEREXTENDING","การเอื้อมเกินตัว",[
+    ["Poor Position","ท่าทางที่ไม่เหมาะสม"],
+    ["Lean over/around","การเอนตัว/โน้มตัวรอบ"],
+    ["Work Overhead","การทำงานเหนือศีรษะ"]]],
+  ["LIFTING","การยกของ",[["Technique","เทคนิคการยก"],["Body Mechanics","หลักการใช้ร่างกาย"]]],
+  ["LINE OF FIRE","แนวอันตราย",[
+    ["Self","ตนเอง"],["Others","ผู้อื่น"],
+    ["Caution/Danger Tape","เทปเตือน/เทปอันตราย"],
+    ["Tape Properly Labeled","ติดป้ายเทปอย่างถูกต้อง"]]],
+  ["BODY TRAPS","จุดเสี่ยงอันตรายต่อร่างกาย",[["Hot Surfaces","พื้นผิวร้อน"],["Pinch Points","จุดหนีบ"]]],
+  ["SLIPS, TRIPS & FALLS","การลื่น สะดุด หกล้ม",[
+    ["Eyes on Path/Designated Path","มองเส้นทาง/เส้นทางที่กำหนด"],
+    ["Handrail Use on Stairs","การใช้ราวจับบนบันได"],
+    ["One Stair Step at a Time","ขึ้น-ลงบันไดทีละขั้น"],
+    ["Proper Footwear","รองเท้าที่เหมาะสม"],
+    ["Stop for Cell/Radio Use","หยุดเดินเมื่อใช้โทรศัพท์/วิทยุ"],
+    ["Proper Rate for Conditions","ความเร็วที่เหมาะสมกับสภาพ"]]],
+  ["SAFETY EQUIPMENT","อุปกรณ์ความปลอดภัย",[
+    ["Easily Accessible and Available","เข้าถึงง่ายและพร้อมใช้งาน"],
+    ["Location Clearly Marked","ตำแหน่งมีป้ายชัดเจน"],
+    ["Proper Condition","สภาพพร้อมใช้งาน"]]],
+  ["BURNING/WELDING AREAS","พื้นที่งานเชื่อม/ตัด",[
+    ["Free of Combustibles","ปราศจากวัสดุไวไฟ"],
+    ["Grounded at Work","ต่อสายดินขณะทำงาน"],
+    ["Containment Of","มีการควบคุม/กักเก็บ"],
+    ["Protective Clothing PPE","ชุด/อุปกรณ์ป้องกันส่วนบุคคล"],
+    ["Fire Watch","ผู้เฝ้าระวังไฟ"],
+    ["Flash Protection","การป้องกันประกายไฟ/แสงจ้า"],
+    ["Fire Extinguisher","ถังดับเพลิง"]]],
+  ["VEHICLE USE","การใช้ยานพาหนะ",[
+    ["Seat Belt Use","การคาดเข็มขัดนิรภัย"],["Speed","ความเร็ว"],["Cell Phone Usage","การใช้โทรศัพท์มือถือ"]]],
+  ["HAZARD COMMUNICATION","การสื่อสารความเสี่ยง",[
+    ["Notice to Others","การแจ้งเตือนผู้อื่น"],["Emergency Procedures","ขั้นตอนฉุกเฉิน"]]],
+  ["SWP, LOTO & PROCEDURES","ขั้นตอนการทำงานปลอดภัย/LOTO",[
+    ["Procedure Used","ปฏิบัติตามขั้นตอนงาน"],
+    ["Properly Trained on Task","ได้รับการฝึกอบรมงานอย่างถูกต้อง"],
+    ["Craft Signed on LockOut","ช่างเซ็นรับทราบ LockOut"],
+    ["Proper Lockout/Tagout","ทำ Lockout/Tagout อย่างถูกต้อง"],
+    ["Scope of Work Followed","ปฏิบัติตามขอบเขตงาน"],
+    ["Proper Permit(s) Issued","ออกใบอนุญาตทำงานอย่างถูกต้อง"]]],
+  ["PRE-JOB HAZARD ASSESSMENT","การประเมินความเสี่ยงก่อนเริ่มงาน",[
+    ["All Items Completed","กรอกครบทุกรายการ"],
+    ["Current Job Listed","ระบุงานปัจจุบัน"],
+    ["Signed by Foreman/Crew","หัวหน้างาน/ทีมงานลงชื่อ"],
+    ["Located at Work Area","อยู่ที่พื้นที่ทำงาน"],
+    ["Task Clearly Defined","ระบุงานอย่างชัดเจน"],
+    ["All Hazards Addressed","ระบุความเสี่ยงครบถ้วน"]]],
+  ["TOOLS/EQUIPMENT","เครื่องมือ/อุปกรณ์",[
+    ["Tool Condition","สภาพเครื่องมือ"],["Proper Tool Use","การใช้เครื่องมืออย่างถูกต้อง"],["Machine Guards","การ์ดป้องกันเครื่องจักร"]]],
+  ["HOUSEKEEPING","ความเป็นระเบียบเรียบร้อย",[
+    ["Trash / Debris","ขยะ/เศษวัสดุ"],
+    ["Tools/Equipment","เครื่องมือ/อุปกรณ์ (จัดเก็บ)"],
+    ["Work Area","พื้นที่ทำงาน"],
+    ["Hoses/Cords Out of Path, Rolled Out of Way","สาย/เชือกไม่กีดขวางทางเดิน มีการม้วนเก็บ"],
+    ["Clean Work Surface/Area","พื้นผิว/พื้นที่ทำงานสะอาด"]]],
+  ["ENVIRONMENTAL","สิ่งแวดล้อม",[
+    ["Spill Prevention (Dry Slab)","การป้องกันการหกรั่วไหล"],
+    ["Labeling (HMIS/GHS)","การติดฉลาก (HMIS/GHS)"],
+    ["Lids on Buckets and Barrels Not in Use","ปิดฝาถังที่ไม่ได้ใช้งาน"],
+    ["Waste Materials Placed in Proper Storage Areas","จัดเก็บของเสียในพื้นที่ที่ถูกต้อง"]]],
+  ["INDUSTRIAL EQUIPMENT","เครื่องจักรอุตสาหกรรม",[
+    ["Inspection Complete","ตรวจสอบครบถ้วน"],
+    ["Work Area Barricaded","กั้นเขตพื้นที่ทำงาน"],
+    ["Spotters Utilized During Lift Operations","มีผู้ให้สัญญาณขณะยกของ"],
+    ["Plywood Used on Grating","ใช้แผ่นไม้อัดปิดตะแกรง"],
+    ["Vision","ทัศนวิสัย"]]],
+  ["ELECTRICAL","ไฟฟ้า",[
+    ["GFCI in Use","ใช้เครื่องตัดไฟรั่ว (GFCI)"],
+    ["Energized Equipment (Proper PPE and Permit)","อุปกรณ์มีไฟ (มี PPE และใบอนุญาตถูกต้อง)"]]],
+  ["HEALTH","สุขภาพ",[["Proper Hydration","ดื่มน้ำเพียงพอ"],["Warning Signs","ป้ายเตือน"]]],
+  ["AISLES, DOORWAYS, STAIRS","ทางเดิน ประตู บันได",[["Clear and Unblocked","โล่งไม่มีสิ่งกีดขวาง"]]],
+  ["LIGHTING & SECURITY","แสงสว่างและความปลอดภัยทางเข้า-ออก",[
+    ["Properly Lighted","มีแสงสว่างเพียงพอ"],
+    ["Blindspots","จุดอับสายตา"],
+    ["Entry/Exit Points Secure","จุดเข้า-ออกปลอดภัย"]]]
+];
+
+// Flatten into a single item list with sequential numbers, keeping category info
+const ITEMS = [];
+CATS.forEach((cat, ci) => {
+  cat[2].forEach(it => {
+    ITEMS.push({ no: ITEMS.length + 1, catIndex: ci, en: it[0], th: it[1] });
+  });
+});
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let capabilitiesReady = false;
+
+const S = {
+  view: "loading",           // loading | login | dashboard | form | tracker | departments
+  session: null,              // { name, department, localOnly }
+  departments: [],            // [{id, name, nameTh}]
+  observations: [],           // live list for dashboard
+  obsUnsub: null,
+  deptUnsub: null,
+  editingObs: null,           // observation object being created/edited
+  openCats: new Set(),        // expanded category indices in the form
+  dashFilterDept: "",
+  dashFilterStatus: "open",   // open | closed | all
+  trackFilterStatus: "all",
+  trackFilterDept: "",
+  navOpen: false,
+  reminderDismissed: false,
+  user: null,                 // Firebase auth user
+  authReady: false,           // first auth callback received
+  authMode: "signin",         // signin | register
+  authBusy: false,
+  reportsMonth: new Date().toISOString().slice(0, 7), // "YYYY-MM"
+  reportsAllTime: false,
+  reportsDept: "",
+};
+
+const root = document.getElementById("app");
+const toastEl = document.getElementById("toast");
+function toast(msg) {
+  toastEl.textContent = msg;
+  toastEl.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => toastEl.classList.remove("show"), 2600);
+}
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[c]));
+}
+function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
+function todayISO() { return new Date().toISOString().slice(0, 10); }
+function nowTimeStr() {
+  const d = new Date();
+  return String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
+}
+function fmtDate(iso) {
+  if (!iso) return "-";
+  const d = new Date(iso + "T00:00:00");
+  if (isNaN(d)) return iso;
+  return d.toLocaleDateString("th-TH", { year: "numeric", month: "short", day: "numeric" });
+}
+function fmtDateTime(iso) {
+  if (!iso) return "-";
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  return d.toLocaleDateString("th-TH", { day: "2-digit", month: "short" }) + " " +
+         d.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
+}
+
+/* ============================================================
+   FIREBASE LAYER  (Auth + Firestore)
+   ============================================================ */
+const FB_CFG = window.FIREBASE_CONFIG || null;
+const FB_CONFIGURED = !!(window.firebase && FB_CFG && FB_CFG.apiKey && FB_CFG.projectId && !/YOUR_|xxxx/i.test(FB_CFG.apiKey + FB_CFG.projectId));
+let fbAuth = null, fbDb = null;
+let unsubObs = null, unsubDept = null;
+
+async function initCapabilities() {
+  if (FB_CONFIGURED) {
+    try {
+      firebase.initializeApp(FB_CFG);
+      fbAuth = firebase.auth();
+      fbDb = firebase.firestore();
+    } catch (e) { console.error("Firebase init failed", e); }
+  }
+  capabilitiesReady = true;
+}
+
+function fbErr(e) {
+  const c = (e && e.code) || "";
+  const map = {
+    "auth/invalid-email": "รูปแบบอีเมลไม่ถูกต้อง",
+    "auth/user-not-found": "ไม่พบบัญชีนี้",
+    "auth/wrong-password": "รหัสผ่านไม่ถูกต้อง",
+    "auth/invalid-credential": "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
+    "auth/invalid-login-credentials": "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
+    "auth/email-already-in-use": "อีเมลนี้ถูกใช้สมัครแล้ว",
+    "auth/weak-password": "รหัสผ่านสั้นเกินไป (อย่างน้อย 6 ตัวอักษร)",
+    "auth/too-many-requests": "ลองผิดหลายครั้งเกินไป กรุณารอสักครู่",
+    "auth/network-request-failed": "เชื่อมต่ออินเทอร์เน็ตไม่ได้",
+    "auth/popup-closed-by-user": "ปิดหน้าต่างล็อกอินก่อนเสร็จสิ้น",
+    "auth/unauthorized-domain": "โดเมนนี้ยังไม่ได้เพิ่มใน Firebase > Authentication > Authorized domains",
+    "auth/operation-not-allowed": "ยังไม่ได้เปิดวิธีล็อกอินนี้ใน Firebase Console",
+    "permission-denied": "ไม่มีสิทธิ์ (ตรวจสอบ Firestore Rules)",
+  };
+  return map[c] || (e && e.message) || String(e);
+}
+
+/* ---------- Departments (readable by everyone, addable by signed-in users) ---------- */
+function subscribeDepartments() {
+  if (!fbDb) return;
+  if (unsubDept) unsubDept();
+  unsubDept = fbDb.collection("departments").onSnapshot(
+    snap => {
+      S.departments = snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }))
+        .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+      render();
+    },
+    err => console.warn("departments listener:", err)
+  );
+}
+
+async function addDepartment(nameEn, nameTh) {
+  nameEn = (nameEn || "").trim();
+  nameTh = (nameTh || "").trim();
+  if (!nameEn && !nameTh) return;
+  if (!S.user) { toast("กรุณาเข้าสู่ระบบก่อนเพิ่มแผนก"); return; }
+  const name = nameEn || nameTh;
+  if (S.departments.some(d => (d.name || "").toLowerCase() === name.toLowerCase())) {
+    toast("มีแผนกนี้อยู่แล้ว"); return;
+  }
+  try {
+    await fbDb.collection("departments").add({
+      name, nameTh, createdAt: new Date().toISOString(), createdBy: S.user.uid
+    });
+    toast("เพิ่มแผนกแล้ว / Department added");
+  } catch (e) { toast("เพิ่มแผนกไม่สำเร็จ: " + fbErr(e)); }
+}
+
+/* ---------- Observations (signed-in users only) ---------- */
+function subscribeObservations() {
+  if (!fbDb || !S.user) return;
+  if (unsubObs) unsubObs();
+  unsubObs = fbDb.collection("observations").orderBy("createdAt", "desc").limit(1000).onSnapshot(
+    snap => {
+      S.observations = snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
+      render();
+    },
+    err => { console.warn("observations listener:", err); toast("โหลดข้อมูลไม่สำเร็จ: " + fbErr(err)); }
+  );
+}
+
+/* ---------- Auth ---------- */
+async function loadProfile(user) {
+  try {
+    const snap = await fbDb.collection("users").doc(user.uid).get();
+    return snap.exists ? snap.data() : null;
+  } catch (e) { console.warn("profile load", e); return null; }
+}
+
+async function saveProfile(name, department) {
+  const u = S.user;
+  const data = { name, department, email: u.email || "", updatedAt: new Date().toISOString() };
+  await fbDb.collection("users").doc(u.uid).set(data, { merge: true });
+  S.session = { name, department, uid: u.uid, email: u.email || "" };
+}
+
+function startAuthListener() {
+  if (!fbAuth) { S.authReady = true; render(); return; }
+  fbAuth.onAuthStateChanged(async user => {
+    if (unsubObs) { unsubObs(); unsubObs = null; }
+    S.user = user || null;
+    S.observations = [];
+    if (!user) {
+      S.session = null; S.view = "login"; S.authReady = true; render(); return;
+    }
+    const prof = await loadProfile(user);
+    if (prof && prof.name && prof.department) {
+      S.session = { name: prof.name, department: prof.department, uid: user.uid, email: user.email || "" };
+      if (S.view === "login" || S.view === "profile" || S.view === "loading") S.view = "dashboard";
+    } else {
+      S.session = null; S.view = "profile";
+    }
+    S.authReady = true;
+    subscribeObservations();
+    render();
+  });
+}
+
+function computeTotals(checklist) {
+  let safe = 0, unsafe = 0, na = 0;
+  ITEMS.forEach(it => {
+    const v = checklist && checklist[it.no];
+    if (!v || !v.status) return;
+    if (v.status === "S") safe++;
+    else if (v.status === "U") unsafe++;
+    else if (v.status === "NA") na++;
+  });
+  return { safe, unsafe, na };
+}
+
+function newObservationDraft() {
+  const checklist = {};
+  ITEMS.forEach(it => { checklist[it.no] = { status: "", comment: "" }; });
+  return {
+    id: null,
+    date: todayISO(),
+    time: nowTimeStr(),
+    department: S.session ? S.session.department : "",
+    area: "",
+    taskObserved: "",
+    observerName: S.session ? S.session.name : "",
+    personObserved: "",
+    obsType: "individual",
+    numObserved: "",
+    checklist,
+    overallComments: "",
+    coached: "",
+    followUpDueDate: "",
+    actionPlan: [],
+    createdAt: null,
+    createdByName: S.session ? S.session.name : "",
+    updatedAt: null,
+  };
+}
+
+async function saveObservation(obs) {
+  const totals = computeTotals(obs.checklist);
+  const now = new Date().toISOString();
+  const isNew = !obs.id;
+  const payload = { ...obs, totals, updatedAt: now, updatedBy: S.user.uid, updatedByName: S.session.name };
+  const id = payload.id;
+  delete payload.id;
+  if (isNew) {
+    payload.createdAt = now;
+    payload.createdBy = S.user.uid;
+    payload.createdByName = S.session.name;
+  }
+  const clean = JSON.parse(JSON.stringify(payload)); // strips undefined (Firestore rejects it)
+  try {
+    if (isNew) {
+      const ref = await fbDb.collection("observations").add(clean);
+      toast("บันทึกการสังเกตแล้ว / Observation saved");
+      return ref.id;
+    }
+    await fbDb.collection("observations").doc(id).set(clean, { merge: true });
+    toast("บันทึกการเปลี่ยนแปลงแล้ว / Changes saved");
+    return id;
+  } catch (e) {
+    toast("บันทึกไม่สำเร็จ: " + fbErr(e));
+    throw e;
+  }
+}
+
+async function updateActionItemInObs(obsId, actionId, patch) {
+  const who = S.session ? S.session.name : "ไม่ทราบชื่อ";
+  const stamp = new Date().toISOString();
+  const ref = fbDb.collection("observations").doc(obsId);
+  try {
+    await fbDb.runTransaction(async tx => {
+      const snap = await tx.get(ref);
+      if (!snap.exists) return;
+      const ap = (snap.data().actionPlan || []).map(a => a.id === actionId
+        ? { ...a, ...patch, updatedByName: who, updatedBy: S.user.uid, updatedAt: stamp }
+        : a);
+      tx.update(ref, { actionPlan: ap, updatedAt: stamp });
+    });
+  } catch (e) { toast("อัปเดตไม่สำเร็จ: " + fbErr(e)); }
+}
+
+/* ============================================================
+   RENDER: SHELL
+   ============================================================ */
+function initials(name) {
+  name = (name || "").trim();
+  if (!name) return "?";
+  const parts = name.split(/\s+/);
+  return (parts[0][0] || "") .toUpperCase();
+}
+
+function renderReminderBar() {
+  if (S.reminderDismissed) return "";
+  const { overdue, dueSoon } = getReminderCounts();
+  if (!overdue && !dueSoon) return "";
+  const cls = overdue ? "overdue" : "";
+  const parts = [];
+  if (overdue) parts.push(`เกินกำหนด <b>${overdue}</b> รายการ`);
+  if (dueSoon) parts.push(`ใกล้ครบกำหนด (≤3 วัน) <b>${dueSoon}</b> รายการ`);
+  return `
+    <div id="reminderbar" class="${cls}">
+      <span>&#9888;&#65039; ${parts.join(" • ")}</span>
+      <button id="rb-goto">ไปที่หน้าติดตามแก้ไข</button>
+      <button class="rb-x" id="rb-close" aria-label="close">&times;</button>
+    </div>
+  `;
+}
+
+function renderShell(innerHtml) {
+  const dept = S.session ? esc(S.session.department || "-") : "";
+  const name = S.session ? esc(S.session.name || "-") : "";
+  const av = initials(S.session && S.session.name);
+
+  root.innerHTML = `
+    <div id="topbar">
+      <div style="display:flex;align-items:center;gap:6px;min-width:0;">
+        <button id="hamburger" aria-label="menu">&#9776;</button>
+        <div class="brand">
+          <div class="mark">BBS</div>
+          <div class="titles">
+            <div class="t1">BBS OBSERVATION</div>
+            <div class="t2">ระบบสังเกตพฤติกรรมความปลอดภัย</div>
+          </div>
+        </div>
+      </div>
+      <button id="userchip">
+        <div class="av">${av}</div>
+        <div class="meta">
+          <div class="nm">${name}</div>
+          <div class="dp">${dept}</div>
+        </div>
+      </button>
+    </div>
+    ${renderReminderBar()}
+    <div id="shell">
+      <div id="navscrim"></div>
+      <nav id="nav">
+        <button class="navitem" data-view="dashboard"><span class="ic">&#9776;</span> Dashboard</button>
+        <button class="navitem" data-view="form"><span class="ic">&#43;</span> สังเกตใหม่ / New</button>
+        <button class="navitem" data-view="tracker"><span class="ic">&#9998;</span> ติดตามแก้ไข / Actions</button>
+        <button class="navitem" data-view="reports"><span class="ic">&#128202;</span> รายงานสรุป / Reports</button>
+        <button class="navitem" data-view="departments"><span class="ic">&#127970;</span> แผนก / Depts</button>
+        <div class="navdivider"></div>
+        <button class="navitem" id="switchuser"><span class="ic">&#10162;</span> ออกจากระบบ / Sign out</button>
+        <div class="navfoot">${esc(S.session && S.session.email || "")}<br>ข้อมูลใช้ร่วมกันทุกคน (Firebase)</div>
+      </nav>
+      <main id="content"><div class="wrap">${innerHtml}</div></main>
+    </div>
+  `;
+
+  document.querySelectorAll(".navitem[data-view]").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.view === S.view);
+    btn.onclick = () => { S.navOpen = false; goto(btn.dataset.view); };
+  });
+  document.getElementById("switchuser").onclick = () => {
+    if (fbAuth) fbAuth.signOut();
+  };
+  document.getElementById("hamburger").onclick = () => {
+    S.navOpen = !S.navOpen;
+    document.getElementById("nav").classList.toggle("open", S.navOpen);
+    document.getElementById("navscrim").classList.toggle("open", S.navOpen);
+  };
+  document.getElementById("navscrim").onclick = () => {
+    S.navOpen = false;
+    document.getElementById("nav").classList.remove("open");
+    document.getElementById("navscrim").classList.remove("open");
+  };
+  document.getElementById("userchip").onclick = () => goto("departments");
+
+  const rbGoto = document.getElementById("rb-goto");
+  if (rbGoto) rbGoto.onclick = () => { S.trackFilterStatus = "overdue"; goto("tracker"); };
+  const rbClose = document.getElementById("rb-close");
+  if (rbClose) rbClose.onclick = () => { S.reminderDismissed = true; render(); };
+}
+
+function goto(view) {
+  S.view = view;
+  if (view === "form" && !S.editingObs) {
+    S.editingObs = newObservationDraft();
+    S.openCats = new Set();
+  }
+  render();
+  window.scrollTo(0, 0);
+}
+
+/* ============================================================
+   RENDER: SETUP NOTICE / LOGIN / PROFILE
+   ============================================================ */
+function renderSetupNotice() {
+  root.innerHTML = `
+    <div id="loginwrap"><div class="logincard" style="max-width:520px;">
+      <div class="brandbar"><div class="mark">BBS</div><div><h1 style="font-size:15px;">BBS OBSERVATION</h1></div></div>
+      <h1>ยังไม่ได้ตั้งค่า Firebase</h1>
+      <div class="sub">Firebase is not configured yet</div>
+      <div class="notice">เปิดไฟล์ <b>firebase-config.js</b> แล้วใส่ค่า config จาก Firebase Console (Project settings → Your apps → Web app) จากนั้นอัปโหลดขึ้น GitHub ใหม่ ขั้นตอนละเอียดอยู่ในไฟล์ README.md</div>
+      ${window.firebase ? "" : `<div class="notice" style="background:var(--red-bg);color:var(--red);">โหลด Firebase SDK ไม่สำเร็จ — ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต</div>`}
+    </div></div>`;
+}
+
+function renderLogin() {
+  const reg = S.authMode === "register";
+  root.innerHTML = `
+    <div id="loginwrap">
+      <div class="logincard">
+        <div class="brandbar">
+          <div class="mark">BBS</div>
+          <div><h1 style="font-size:15px;">BBS OBSERVATION</h1><div class="sub" style="margin:0;">Behavior Based Safety</div></div>
+        </div>
+        <div class="authtabs">
+          <button data-mode="signin" class="${!reg ? "active" : ""}">เข้าสู่ระบบ</button>
+          <button data-mode="register" class="${reg ? "active" : ""}">สมัครสมาชิก</button>
+        </div>
+        ${reg ? `<div class="field"><label class="field-label">ชื่อ-นามสกุล / Full name</label><input type="text" id="a_name" autocomplete="name"></div>` : ``}
+        <div class="field"><label class="field-label">อีเมล / Email</label><input type="text" id="a_email" autocomplete="email" inputmode="email"></div>
+        <div class="field"><label class="field-label">รหัสผ่าน / Password</label><input type="password" id="a_pass" autocomplete="${reg ? "new-password" : "current-password"}" style="width:100%;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);border-radius:var(--radius-s);padding:8px 10px;"></div>
+        <button class="btn primary" id="a_go" style="width:100%;justify-content:center;padding:11px;">${reg ? "สมัครสมาชิก / Register" : "เข้าสู่ระบบ / Sign in"}</button>
+        <div class="orline"><span>หรือ</span></div>
+        <button class="btn" id="a_google" style="width:100%;justify-content:center;padding:10px;">ดำเนินการต่อด้วย Google</button>
+        ${!reg ? `<div style="text-align:center;margin-top:12px;"><button class="btn ghost small" id="a_forgot">ลืมรหัสผ่าน?</button></div>` : ``}
+      </div>
+    </div>`;
+
+  document.querySelectorAll(".authtabs button").forEach(b => b.onclick = () => { S.authMode = b.dataset.mode; renderLogin(); });
+  const busy = on => { const g = document.getElementById("a_go"); if (g) g.disabled = on; };
+
+  const go = async () => {
+    const email = document.getElementById("a_email").value.trim();
+    const pass = document.getElementById("a_pass").value;
+    if (!email || !pass) { toast("กรุณากรอกอีเมลและรหัสผ่าน"); return; }
+    busy(true);
+    try {
+      if (reg) {
+        const name = document.getElementById("a_name").value.trim();
+        if (!name) { toast("กรุณากรอกชื่อ-นามสกุล"); busy(false); return; }
+        const cred = await fbAuth.createUserWithEmailAndPassword(email, pass);
+        try { await cred.user.updateProfile({ displayName: name }); } catch (e) {}
+        try { await cred.user.sendEmailVerification(); } catch (e) {}
+        S.pendingName = name;
+      } else {
+        await fbAuth.signInWithEmailAndPassword(email, pass);
+      }
+    } catch (e) { toast(fbErr(e)); busy(false); }
+  };
+  document.getElementById("a_go").onclick = go;
+  document.getElementById("a_pass").addEventListener("keydown", e => { if (e.key === "Enter") go(); });
+  document.getElementById("a_google").onclick = async () => {
+    try { await fbAuth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+    catch (e) { toast(fbErr(e)); }
+  };
+  const fg = document.getElementById("a_forgot");
+  if (fg) fg.onclick = async () => {
+    const email = document.getElementById("a_email").value.trim();
+    if (!email) { toast("กรอกอีเมลก่อน แล้วกด \"ลืมรหัสผ่าน\""); return; }
+    try { await fbAuth.sendPasswordResetEmail(email); toast("ส่งลิงก์ตั้งรหัสผ่านใหม่ไปที่อีเมลแล้ว"); }
+    catch (e) { toast(fbErr(e)); }
+  };
+}
+
+function renderProfile() {
+  const u = S.user;
+  const curName = S.pendingName || (S.session && S.session.name) || (u && u.displayName) || "";
+  const curDept = (S.session && S.session.department) || "";
+  const deptOptions = S.departments.map(d =>
+    `<option value="${esc(d.name)}" ${d.name === curDept ? "selected" : ""}>${esc(d.name)}${d.nameTh ? " / " + esc(d.nameTh) : ""}</option>`
+  ).join("");
+  root.innerHTML = `
+    <div id="loginwrap">
+      <div class="logincard">
+        <div class="brandbar"><div class="mark">BBS</div><div><h1 style="font-size:15px;">BBS OBSERVATION</h1></div></div>
+        <h1>ข้อมูลผู้ใช้งาน</h1>
+        <div class="sub">${esc((u && u.email) || "")} — ระบุชื่อและแผนกของคุณ</div>
+        <div class="field"><label class="field-label">ชื่อผู้สังเกตการณ์ / Observer name</label><input type="text" id="p_name" value="${esc(curName)}"></div>
+        <div class="field">
+          <label class="field-label">แผนก / Department</label>
+          <select id="p_dept">
+            <option value="">— เลือกแผนก / select —</option>
+            ${deptOptions}
+            <option value="__add__">+ เพิ่มแผนกใหม่ / Add new…</option>
+          </select>
+          <div class="adddept-row" id="addDeptRow" style="display:none;">
+            <input type="text" id="newDeptName" placeholder="Department (EN)">
+            <input type="text" id="newDeptNameTh" placeholder="แผนก (TH)">
+            <button class="btn small" id="confirmAddDept">เพิ่ม</button>
+          </div>
+        </div>
+        <button class="btn primary" id="p_go" style="width:100%;justify-content:center;padding:11px;">บันทึกและเข้าใช้งาน</button>
+        <div style="text-align:center;margin-top:10px;"><button class="btn ghost small" id="p_out">ออกจากระบบ</button></div>
+      </div>
+    </div>`;
+  const sel = document.getElementById("p_dept");
+  document.getElementById("p_name").oninput = e => { S.pendingName = e.target.value; };
+  sel.onchange = () => { document.getElementById("addDeptRow").style.display = sel.value === "__add__" ? "flex" : "none"; };
+  document.getElementById("confirmAddDept").onclick = async () => {
+    const en = document.getElementById("newDeptName").value;
+    const th = document.getElementById("newDeptNameTh").value;
+    if (!en.trim() && !th.trim()) { toast("กรุณากรอกชื่อแผนก"); return; }
+    S.pendingDept = (en || th).trim();   // set BEFORE saving so the re-render can auto-select it
+    await addDepartment(en, th);
+  };
+  // after the departments list refreshes, auto-select the newly added one
+  if (S.pendingDept) {
+    const m = Array.from(sel.options).find(o => o.value === S.pendingDept);
+    if (m) { sel.value = S.pendingDept; S.pendingDept = null; }
+  }
+  document.getElementById("p_out").onclick = () => fbAuth.signOut();
+  document.getElementById("p_go").onclick = async () => {
+    const name = document.getElementById("p_name").value.trim();
+    const dept = sel.value;
+    if (!name) { toast("กรุณากรอกชื่อ"); return; }
+    if (!dept || dept === "__add__") { toast("กรุณาเลือกแผนก"); return; }
+    try {
+      await saveProfile(name, dept);
+      S.pendingName = null;
+      S.view = "dashboard";
+      render();
+    } catch (e) { toast("บันทึกไม่สำเร็จ: " + fbErr(e)); }
+  };
+}
+
+/* ============================================================
+   RENDER: DASHBOARD
+   ============================================================ */
+function renderDashboard() {
+  const deptOptions = S.departments.map(d =>
+    `<option value="${esc(d.name)}" ${S.dashFilterDept === d.name ? "selected" : ""}>${esc(d.name)}</option>`
+  ).join("");
+
+  let list = S.observations.slice();
+  if (S.dashFilterDept) list = list.filter(o => o.department === S.dashFilterDept);
+  list = list.filter(o => {
+    const isClosed = isObsClosed(o);
+    if (S.dashFilterStatus === "open") return !isClosed;
+    if (S.dashFilterStatus === "closed") return isClosed;
+    return true;
+  });
+
+  const cards = list.map(o => {
+    const t = o.totals || computeTotals(o.checklist);
+    const closed = isObsClosed(o);
+    const openActions = (o.actionPlan || []).filter(a => a.status !== "done").length;
+    return `
+      <div class="obscard status-${closed ? "closed" : "open"}" data-id="${esc(o.id)}">
+        <div class="main">
+          <div class="row1">
+            <span class="title">${esc(o.area || o.taskObserved || "ไม่มีชื่อพื้นที่")}</span>
+            <span class="pill ${closed ? "green" : "amber"}">${closed ? "ปิดงานแล้ว" : "เปิดอยู่"}</span>
+            ${o.department ? `<span class="pill blue">${esc(o.department)}</span>` : ``}
+          </div>
+          <div class="meta">${fmtDate(o.date)} • ผู้สังเกต: ${esc(o.observerName || "-")}${o.taskObserved ? " • " + esc(o.taskObserved) : ""}</div>
+        </div>
+        <div class="stats">
+          <div class="stat"><b style="color:var(--green)">${t.safe}</b><span>Safe</span></div>
+          <div class="stat"><b style="color:var(--red)">${t.unsafe}</b><span>Unsafe</span></div>
+          <div class="stat"><b style="color:${openActions ? "var(--amber-ink)" : "var(--steel)"}">${openActions}</b><span>Actions</span></div>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  renderShell(`
+    <h2 style="margin-bottom:4px;">ภาพรวมการสังเกต</h2>
+    <div style="color:var(--steel);font-size:13px;margin-bottom:16px;">Dashboard — all observations shared across your organization</div>
+
+    <div class="toolbar">
+      <select id="fDept" style="min-width:160px;">
+        <option value="">ทุกแผนก / All depts</option>
+        ${deptOptions}
+      </select>
+      <div class="seg" id="fStatus">
+        <button data-v="open" class="${S.dashFilterStatus==='open'?'active':''}">เปิดอยู่</button>
+        <button data-v="closed" class="${S.dashFilterStatus==='closed'?'active':''}">ปิดแล้ว</button>
+        <button data-v="all" class="${S.dashFilterStatus==='all'?'active':''}">ทั้งหมด</button>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn amber" id="newObsBtn">+ สังเกตใหม่ / New Observation</button>
+    </div>
+
+    ${cards ? `<div class="obslist">${cards}</div>` : `
+      <div class="empty">
+        <div class="big">&#128203;</div>
+        <div>ยังไม่มีรายการสังเกต ลองเริ่มรายการแรกของคุณ</div>
+        <div style="font-size:12px;">No observations yet — start your first one.</div>
+      </div>
+    `}
+  `);
+
+  document.getElementById("fDept").onchange = e => { S.dashFilterDept = e.target.value; render(); };
+  document.querySelectorAll("#fStatus button").forEach(b => {
+    b.onclick = () => { S.dashFilterStatus = b.dataset.v; render(); };
+  });
+  document.getElementById("newObsBtn").onclick = () => { S.editingObs = null; goto("form"); };
+  document.querySelectorAll(".obscard").forEach(c => {
+    c.onclick = () => {
+      const obs = S.observations.find(o => o.id === c.dataset.id);
+      if (obs) {
+        S.editingObs = JSON.parse(JSON.stringify(obs));
+        // backfill any missing checklist entries (schema safety)
+        ITEMS.forEach(it => { if (!S.editingObs.checklist[it.no]) S.editingObs.checklist[it.no] = { status: "", comment: "" }; });
+        S.openCats = new Set();
+        goto("form");
+      }
+    };
+  });
+}
+
+function isObsClosed(o) {
+  const ap = o.actionPlan || [];
+  if (ap.length === 0) return true;
+  return ap.every(a => a.status === "done");
+}
+
+// Shared action-item status classifier: done | overdue | due_soon | in_progress | open
+function actionStatusOf(a) {
+  const today = todayISO();
+  if (a.status === "done") return "done";
+  if (a.dueDate && a.dueDate < today) return "overdue";
+  if (a.dueDate) {
+    const soon = new Date(today);
+    soon.setDate(soon.getDate() + 3);
+    if (a.dueDate <= soon.toISOString().slice(0, 10)) return "due_soon";
+  }
+  return a.status === "in_progress" ? "in_progress" : "open";
+}
+
+function getReminderCounts() {
+  let overdue = 0, dueSoon = 0;
+  S.observations.forEach(o => {
+    (o.actionPlan || []).forEach(a => {
+      const st = actionStatusOf(a);
+      if (st === "overdue") overdue++;
+      else if (st === "due_soon") dueSoon++;
+    });
+  });
+  return { overdue, dueSoon };
+}
+
+/* ============================================================
+   RENDER: OBSERVATION FORM
+   ============================================================ */
+function renderForm() {
+  const obs = S.editingObs;
+  const totals = computeTotals(obs.checklist);
+  const deptOptions = S.departments.map(d =>
+    `<option value="${esc(d.name)}" ${obs.department === d.name ? "selected" : ""}>${esc(d.name)}</option>`
+  ).join("");
+
+  const catsHtml = CATS.map((cat, ci) => {
+    const items = ITEMS.filter(it => it.catIndex === ci);
+    const unsafeCount = items.filter(it => obs.checklist[it.no] && obs.checklist[it.no].status === "U").length;
+    const filledCount = items.filter(it => obs.checklist[it.no] && obs.checklist[it.no].status).length;
+    const isOpen = S.openCats.has(ci);
+    const rows = items.map(it => {
+      const cur = obs.checklist[it.no] || { status: "", comment: "" };
+      const seg = ["S", "U", "NA"].map(v => {
+        const label = v === "NA" ? "B" : v;
+        const title = v === "S" ? "Safe / ปลอดภัย" : v === "U" ? "Unsafe / ไม่ปลอดภัย" : "Barriers / ข้อจำกัด";
+        return `<button type="button" title="${title}" class="${cur.status === v ? "sel-" + v : ""}" data-item="${it.no}" data-val="${v}">${label}</button>`;
+      }).join("");
+      return `
+        <div class="item-row">
+          <div class="itxt"><span class="en">${it.no}. ${esc(it.en)}</span><br><span class="th">${esc(it.th)}</span></div>
+          <div class="itog">${seg}</div>
+          <div class="icmt"><input type="text" placeholder="หมายเหตุ / note" data-comment="${it.no}" value="${esc(cur.comment || "")}"></div>
+        </div>
+      `;
+    }).join("");
+    return `
+      <div class="category ${isOpen ? "open" : ""}" data-cat="${ci}">
+        <div class="cathead" data-cattoggle="${ci}">
+          <span class="chv">&#9656;</span>
+          <div class="names">
+            <div class="n1">${ci + 1}. ${esc(cat[0])}</div>
+            <div class="n2">${esc(cat[1])}</div>
+          </div>
+          <div class="badges">
+            ${unsafeCount ? `<span class="pill red">${unsafeCount} unsafe</span>` : ``}
+            <span class="pill grey">${filledCount}/${items.length}</span>
+          </div>
+        </div>
+        <div class="catbody">${rows}</div>
+      </div>
+    `;
+  }).join("");
+
+  const apRows = (obs.actionPlan || []).map((a, idx) => `
+    <tr data-ap="${a.id}">
+      <td><input type="text" data-apf="action" value="${esc(a.action || "")}" placeholder="มาตรการแก้ไข / Corrective action"></td>
+      <td style="width:150px;"><input type="text" data-apf="responsible" value="${esc(a.responsible || "")}" placeholder="ผู้รับผิดชอบ"></td>
+      <td style="width:150px;"><input type="date" data-apf="dueDate" value="${esc(a.dueDate || "")}"></td>
+      <td style="width:130px;">
+        <select data-apf="status">
+          <option value="open" ${a.status === "open" ? "selected" : ""}>เปิด / Open</option>
+          <option value="in_progress" ${a.status === "in_progress" ? "selected" : ""}>กำลังทำ</option>
+          <option value="done" ${a.status === "done" ? "selected" : ""}>เสร็จสิ้น</option>
+        </select>
+        ${a.updatedByName ? `<div class="apn-meta">โดย ${esc(a.updatedByName)}${a.updatedAt ? " • " + fmtDateTime(a.updatedAt) : ""}</div>` : ``}
+      </td>
+      <td style="width:34px;"><button type="button" class="btn small danger" data-apdel="${a.id}">&times;</button></td>
+    </tr>
+  `).join("");
+
+  renderShell(`
+    <button class="backlink" id="backToDash">&larr; กลับ / Back</button>
+    <h2>${obs.id ? "แก้ไขรายการสังเกต" : "เริ่มการสังเกตใหม่"}</h2>
+    <div style="color:var(--steel);font-size:13px;margin-bottom:16px;">BBS Observation ${obs.id ? "— " + esc(obs.area || "") : ""}</div>
+
+    <div class="section-title">ข้อมูลทั่วไป / General Info</div>
+    <div class="card">
+      <div class="formgrid">
+        <div><label class="field-label">วันที่ / Date</label><input type="date" id="f_date" value="${esc(obs.date)}"></div>
+        <div><label class="field-label">เวลา / Time</label><input type="text" id="f_time" value="${esc(obs.time)}"></div>
+        <div>
+          <label class="field-label">แผนก / Department</label>
+          <select id="f_dept"><option value="">— เลือก —</option>${deptOptions}</select>
+        </div>
+        <div><label class="field-label">พื้นที่ / Area</label><input type="text" id="f_area" value="${esc(obs.area)}" placeholder="เช่น Line 2, Warehouse A"></div>
+        <div><label class="field-label">งานที่สังเกต / Task observed</label><input type="text" id="f_task" value="${esc(obs.taskObserved)}"></div>
+        <div><label class="field-label">ผู้ถูกสังเกต / Person observed</label><input type="text" id="f_person" value="${esc(obs.personObserved)}"></div>
+        <div><label class="field-label">ผู้สังเกตการณ์ / Observer</label><input type="text" id="f_observer" value="${esc(obs.observerName)}"></div>
+        <div>
+          <label class="field-label">ประเภท / Type</label>
+          <select id="f_type">
+            <option value="individual" ${obs.obsType === "individual" ? "selected" : ""}>รายบุคคล / Individual</option>
+            <option value="group" ${obs.obsType === "group" ? "selected" : ""}>กลุ่ม / Group</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="totalsbar">
+      <div class="tchip safe"><b id="tot_safe">${totals.safe}</b><span>Safe / ปลอดภัย</span></div>
+      <div class="tchip unsafe"><b id="tot_unsafe">${totals.unsafe}</b><span>Unsafe / ไม่ปลอดภัย</span></div>
+      <div class="tchip na"><b id="tot_na">${totals.na}</b><span>Barriers (B) / ข้อจำกัด</span></div>
+    </div>
+
+    <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;">
+      <span>รายการตรวจ 90 ข้อ / Checklist</span>
+    </div>
+    <div class="accordion-controls">
+      <button class="btn small" id="expandAll">ขยายทั้งหมด</button>
+      <button class="btn small" id="collapseAll">ย่อทั้งหมด</button>
+    </div>
+    <div id="catContainer">${catsHtml}</div>
+
+    <div class="section-title">ความเห็นเพิ่มเติม / Overall comments</div>
+    <div class="card">
+      <textarea id="f_comments" placeholder="ข้อสังเกตโดยรวม / ความเสี่ยงที่พบ และคำชมเชย">${esc(obs.overallComments)}</textarea>
+      <div class="formgrid" style="margin-top:12px;">
+        <div>
+          <label class="field-label">มีการให้คำแนะนำหรือไม่ / Coached?</label>
+          <select id="f_coached">
+            <option value="" ${!obs.coached ? "selected" : ""}>— ยังไม่ระบุ —</option>
+            <option value="yes" ${obs.coached === "yes" ? "selected" : ""}>ใช่ / Yes</option>
+            <option value="no" ${obs.coached === "no" ? "selected" : ""}>ไม่ใช่ / No</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">วันครบกำหนดติดตามผล / Follow-up due</label>
+          <input type="date" id="f_followup" value="${esc(obs.followUpDueDate)}">
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">แผนการดำเนินการแก้ไข / Action Plan</div>
+    <div class="card">
+      <table class="apn-table">
+        <thead><tr>
+          <th>มาตรการแก้ไข / Corrective Action</th>
+          <th>ผู้รับผิดชอบ</th>
+          <th>วันที่แล้วเสร็จ</th>
+          <th>สถานะ</th>
+          <th></th>
+        </tr></thead>
+        <tbody id="apBody">${apRows}</tbody>
+      </table>
+      <button class="btn small" id="addAction" style="margin-top:10px;">+ เพิ่มมาตรการ / Add action</button>
+    </div>
+
+    <div class="formfoot">
+      <button class="btn" id="cancelForm">ยกเลิก</button>
+      <button class="btn primary" id="saveForm">บันทึก / Save</button>
+    </div>
+  `);
+
+  // ---- wire up events ----
+  document.getElementById("backToDash").onclick = () => { S.editingObs = null; goto("dashboard"); };
+  document.getElementById("cancelForm").onclick = () => { S.editingObs = null; goto("dashboard"); };
+
+  const bind = (id, field, transform) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener("input", () => { obs[field] = transform ? transform(el.value) : el.value; });
+    el.addEventListener("change", () => { obs[field] = transform ? transform(el.value) : el.value; });
+  };
+  bind("f_date", "date"); bind("f_time", "time"); bind("f_dept", "department");
+  bind("f_area", "area"); bind("f_task", "taskObserved"); bind("f_person", "personObserved");
+  bind("f_observer", "observerName"); bind("f_type", "obsType");
+  bind("f_comments", "overallComments"); bind("f_coached", "coached"); bind("f_followup", "followUpDueDate");
+
+  document.getElementById("expandAll").onclick = () => { CATS.forEach((_, ci) => S.openCats.add(ci)); render(); };
+  document.getElementById("collapseAll").onclick = () => { S.openCats.clear(); render(); };
+
+  document.querySelectorAll("[data-cattoggle]").forEach(h => {
+    h.onclick = () => {
+      const ci = Number(h.dataset.cattoggle);
+      if (S.openCats.has(ci)) S.openCats.delete(ci); else S.openCats.add(ci);
+      render();
+    };
+  });
+
+  document.querySelectorAll(".itog button").forEach(b => {
+    b.onclick = () => {
+      const no = b.dataset.item, val = b.dataset.val;
+      const cur = obs.checklist[no] || { status: "", comment: "" };
+      cur.status = cur.status === val ? "" : val;
+      obs.checklist[no] = cur;
+      const t = computeTotals(obs.checklist);
+      document.getElementById("tot_safe").textContent = t.safe;
+      document.getElementById("tot_unsafe").textContent = t.unsafe;
+      document.getElementById("tot_na").textContent = t.na;
+      // update just this button group without full re-render for smoothness
+      const row = b.closest(".itog");
+      row.querySelectorAll("button").forEach(x => x.className = "");
+      if (cur.status) row.querySelector('[data-val="' + cur.status + '"]').className = "sel-" + cur.status;
+      // refresh badges lazily on next full render (category counts)
+    };
+  });
+  document.querySelectorAll("[data-comment]").forEach(inp => {
+    inp.addEventListener("input", () => {
+      const no = inp.dataset.comment;
+      const cur = obs.checklist[no] || { status: "", comment: "" };
+      cur.comment = inp.value;
+      obs.checklist[no] = cur;
+    });
+  });
+
+  document.getElementById("addAction").onclick = () => {
+    obs.actionPlan = obs.actionPlan || [];
+    obs.actionPlan.push({ id: uid(), action: "", responsible: "", dueDate: "", status: "open" });
+    render();
+  };
+  wireActionRows(obs);
+}
+
+function wireActionRows(obs) {
+  document.querySelectorAll("#apBody tr").forEach(tr => {
+    const id = tr.dataset.ap;
+    tr.querySelectorAll("[data-apf]").forEach(el => {
+      const field = el.dataset.apf;
+      const handler = () => {
+        const item = (obs.actionPlan || []).find(a => a.id === id);
+        if (item) {
+          item[field] = el.value;
+          item.updatedByName = S.session ? S.session.name : item.updatedByName;
+          item.updatedAt = new Date().toISOString();
+        }
+      };
+      el.addEventListener("input", handler);
+      el.addEventListener("change", handler);
+    });
+  });
+  document.querySelectorAll("[data-apdel]").forEach(btn => {
+    btn.onclick = () => {
+      obs.actionPlan = (obs.actionPlan || []).filter(a => a.id !== btn.dataset.apdel);
+      render();
+    };
+  });
+
+  document.getElementById("saveForm").onclick = async () => {
+    const btn = document.getElementById("saveForm");
+    btn.disabled = true; btn.textContent = "กำลังบันทึก…";
+    try {
+      const savedId = await saveObservation(obs);
+      S.editingObs = null;
+      goto("dashboard");
+    } catch (e) {
+      btn.disabled = false; btn.textContent = "บันทึก / Save";
+    }
+  };
+}
+
+/* ============================================================
+   RENDER: ACTION TRACKER
+   ============================================================ */
+function renderTracker() {
+  const rows = [];
+  S.observations.forEach(o => {
+    (o.actionPlan || []).forEach(a => {
+      rows.push({ obs: o, a });
+    });
+  });
+
+  const statusOf = actionStatusOf;
+
+  let filtered = rows.filter(r => {
+    if (S.trackFilterDept && r.obs.department !== S.trackFilterDept) return false;
+    if (S.trackFilterStatus === "all") return true;
+    return statusOf(r.a) === S.trackFilterStatus;
+  });
+
+  filtered.sort((x, y) => (x.a.dueDate || "9999").localeCompare(y.a.dueDate || "9999"));
+
+  const deptOptions = S.departments.map(d =>
+    `<option value="${esc(d.name)}" ${S.trackFilterDept === d.name ? "selected" : ""}>${esc(d.name)}</option>`
+  ).join("");
+
+  const pillFor = st => ({
+    done: '<span class="pill green">เสร็จสิ้น</span>',
+    overdue: '<span class="pill red">เกินกำหนด</span>',
+    due_soon: '<span class="pill amber">ใกล้ครบกำหนด</span>',
+    in_progress: '<span class="pill blue">กำลังทำ</span>',
+    open: '<span class="pill grey">เปิดอยู่</span>',
+  }[st]);
+
+  const trows = filtered.map(({ obs, a }) => `
+    <tr>
+      <td>
+        <div style="font-weight:600;">${esc(a.action || "(ไม่มีรายละเอียด)")}</div>
+        <div style="font-size:11.5px;color:var(--steel);">${esc(obs.department || "-")} • ${esc(obs.area || "-")} • ${fmtDate(obs.date)}</div>
+      </td>
+      <td>${esc(a.responsible || "-")}</td>
+      <td>${a.dueDate ? fmtDate(a.dueDate) : "-"}</td>
+      <td>${pillFor(statusOf(a))}</td>
+      <td style="min-width:140px;">
+        <select data-obs="${esc(obs.id)}" data-act="${esc(a.id)}">
+          <option value="open" ${a.status === "open" ? "selected" : ""}>เปิด</option>
+          <option value="in_progress" ${a.status === "in_progress" ? "selected" : ""}>กำลังทำ</option>
+          <option value="done" ${a.status === "done" ? "selected" : ""}>เสร็จสิ้น</option>
+        </select>
+        ${a.updatedByName ? `<div class="apn-meta">แก้ไขล่าสุดโดย ${esc(a.updatedByName)}${a.updatedAt ? " • " + fmtDateTime(a.updatedAt) : ""}</div>` : ``}
+      </td>
+    </tr>
+  `).join("");
+
+  renderShell(`
+    <h2 style="margin-bottom:4px;">ติดตามการแก้ไข</h2>
+    <div style="color:var(--steel);font-size:13px;margin-bottom:16px;">Action Plan Tracker — across every observation</div>
+
+    <div class="toolbar">
+      <select id="tDept" style="min-width:160px;">
+        <option value="">ทุกแผนก / All depts</option>
+        ${deptOptions}
+      </select>
+      <div class="seg" id="tStatus">
+        <button data-v="all" class="${S.trackFilterStatus==='all'?'active':''}">ทั้งหมด</button>
+        <button data-v="open" class="${S.trackFilterStatus==='open'?'active':''}">เปิดอยู่</button>
+        <button data-v="in_progress" class="${S.trackFilterStatus==='in_progress'?'active':''}">กำลังทำ</button>
+        <button data-v="due_soon" class="${S.trackFilterStatus==='due_soon'?'active':''}">ใกล้ครบกำหนด</button>
+        <button data-v="overdue" class="${S.trackFilterStatus==='overdue'?'active':''}">เกินกำหนด</button>
+        <button data-v="done" class="${S.trackFilterStatus==='done'?'active':''}">เสร็จสิ้น</button>
+      </div>
+    </div>
+
+    ${trows ? `
+      <div style="overflow-x:auto;">
+        <table class="tracktable">
+          <thead><tr><th>มาตรการแก้ไข</th><th>ผู้รับผิดชอบ</th><th>วันครบกำหนด</th><th>สถานะ</th><th>อัปเดตสถานะ</th></tr></thead>
+          <tbody>${trows}</tbody>
+        </table>
+      </div>
+    ` : `
+      <div class="empty">
+        <div class="big">&#9989;</div>
+        <div>ไม่พบรายการแก้ไขในเงื่อนไขนี้</div>
+      </div>
+    `}
+  `);
+
+  document.getElementById("tDept").onchange = e => { S.trackFilterDept = e.target.value; render(); };
+  document.querySelectorAll("#tStatus button").forEach(b => {
+    b.onclick = () => { S.trackFilterStatus = b.dataset.v; render(); };
+  });
+  document.querySelectorAll("[data-obs][data-act]").forEach(sel => {
+    sel.onchange = () => updateActionItemInObs(sel.dataset.obs, sel.dataset.act, { status: sel.value });
+  });
+}
+
+/* ============================================================
+   RENDER: DEPARTMENTS
+   ============================================================ */
+/* ============================================================
+   RENDER: REPORTS
+   ============================================================ */
+function monthLabelTh(ym) {
+  if (!ym) return "-";
+  const parts = ym.split("-").map(Number);
+  const d = new Date(parts[0], parts[1] - 1, 1);
+  return d.toLocaleDateString("th-TH", { year: "numeric", month: "long" });
+}
+
+function computeReportData() {
+  let scope = S.observations.slice();
+  if (!S.reportsAllTime) scope = scope.filter(o => (o.date || "").slice(0, 7) === S.reportsMonth);
+  if (S.reportsDept) scope = scope.filter(o => o.department === S.reportsDept);
+
+  let scopeTime = S.observations.slice();
+  if (!S.reportsAllTime) scopeTime = scopeTime.filter(o => (o.date || "").slice(0, 7) === S.reportsMonth);
+
+  let totSafe = 0, totUnsafe = 0, totBarrier = 0;
+  scope.forEach(o => {
+    const t = o.totals || computeTotals(o.checklist);
+    totSafe += t.safe; totUnsafe += t.unsafe; totBarrier += t.na;
+  });
+
+  const deptCounts = {};
+  scopeTime.forEach(o => { const d = o.department || "(ไม่ระบุ)"; deptCounts[d] = (deptCounts[d] || 0) + 1; });
+  const deptLabels = Object.keys(deptCounts).sort((a, b) => deptCounts[b] - deptCounts[a]);
+  const deptData = deptLabels.map(l => deptCounts[l]);
+
+  const itemCounts = {};
+  scope.forEach(o => {
+    ITEMS.forEach(it => {
+      const v = o.checklist && o.checklist[it.no];
+      if (v && v.status === "U") itemCounts[it.no] = (itemCounts[it.no] || 0) + 1;
+    });
+  });
+  const rankedFull = Object.keys(itemCounts)
+    .map(no => ({ no: Number(no), count: itemCounts[no] }))
+    .sort((a, b) => b.count - a.count);
+
+  return { scope, scopeTime, totSafe, totUnsafe, totBarrier, deptLabels, deptData, rankedFull };
+}
+
+function renderReports() {
+  const rd = computeReportData();
+  const ranked = rd.rankedFull.slice(0, 10);
+  const maxCount = ranked.length ? ranked[0].count : 1;
+
+  const deptOptions = S.departments.map(d =>
+    `<option value="${esc(d.name)}" ${S.reportsDept === d.name ? "selected" : ""}>${esc(d.name)}</option>`
+  ).join("");
+
+  const rankHtml = ranked.map((r, i) => {
+    const item = ITEMS.find(x => x.no === r.no);
+    const cat = CATS[item.catIndex];
+    const pct = Math.max(6, Math.round((r.count / maxCount) * 100));
+    return `
+      <div class="rankrow">
+        <div class="rn">${i + 1}</div>
+        <div class="rt">
+          <div class="en">${item.no}. ${esc(item.en)}</div>
+          <div class="cat">${esc(cat[0])} • ${esc(item.th)}</div>
+          <div class="rbar" style="width:${pct}%;"></div>
+        </div>
+        <div class="rc">${r.count}</div>
+      </div>
+    `;
+  }).join("");
+
+  renderShell(`
+    <h2 style="margin-bottom:4px;">รายงานสรุป</h2>
+    <div style="color:var(--steel);font-size:13px;margin-bottom:16px;">Reports — จำนวน BBS ต่อแผนกต่อเดือน และหัวข้อที่พบไม่ปลอดภัยมากที่สุด</div>
+
+    <div class="toolbar">
+      <input type="month" id="rMonth" value="${esc(S.reportsMonth)}" ${S.reportsAllTime ? "disabled" : ""}>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--steel);">
+        <input type="checkbox" id="rAllTime" ${S.reportsAllTime ? "checked" : ""}> ตลอดเวลา / All-time
+      </label>
+      <select id="rDept"><option value="">ทุกแผนก / All depts</option>${deptOptions}</select>
+      <div class="spacer"></div>
+      <button class="btn amber" id="exportXlsx">⬇ Export Excel</button>
+    </div>
+
+    <div class="kpirow">
+      <div class="kpi total"><div class="kv">${rd.scope.length}</div><div class="kl">รายการสังเกตทั้งหมด</div></div>
+      <div class="kpi safe"><div class="kv">${rd.totSafe}</div><div class="kl">Safe / ปลอดภัย</div></div>
+      <div class="kpi unsafe"><div class="kv">${rd.totUnsafe}</div><div class="kl">Unsafe / ไม่ปลอดภัย</div></div>
+      <div class="kpi barrier"><div class="kv">${rd.totBarrier}</div><div class="kl">Barriers (B) / ข้อจำกัด</div></div>
+    </div>
+
+    <div class="chartgrid">
+      <div class="chartcard">
+        <h3>สรุปผล Safe / Unsafe / Barriers</h3>
+        <div class="chartwrap" id="donutChart"></div>
+      </div>
+      <div class="chartcard">
+        <h3>จำนวน BBS ที่ส่งต่อแผนก ${S.reportsAllTime ? "(ตลอดเวลา)" : "(" + esc(monthLabelTh(S.reportsMonth)) + ")"}</h3>
+        <div class="chartwrap">${rd.deptLabels.length ? `<div id="deptChart" style="height:100%;"></div>` : `<div class="empty" style="padding:30px 10px;"><div class="big">&#128202;</div><div style="font-size:12.5px;">ไม่มีข้อมูลในช่วงที่เลือก</div></div>`}</div>
+      </div>
+    </div>
+
+    <div class="chartcard" style="margin-bottom:18px;">
+      <h3>10 หัวข้อที่พบ "ไม่ปลอดภัย" มากที่สุด (เรียงจากมากไปน้อย)</h3>
+      ${ranked.length
+        ? `<div id="topChart"></div>`
+        : `<div class="empty" style="padding:20px;"><div class="big">&#9989;</div><div>ไม่พบข้อมูล Unsafe ในช่วงที่เลือก</div></div>`}
+    </div>
+
+    ${ranked.length ? `<div class="card"><div class="section-title" style="margin-top:0;">รายละเอียดอันดับ</div>${rankHtml}</div>` : ``}
+  `);
+
+  document.getElementById("rMonth").onchange = e => { S.reportsMonth = e.target.value; render(); };
+  document.getElementById("rAllTime").onchange = e => { S.reportsAllTime = e.target.checked; render(); };
+  document.getElementById("rDept").onchange = e => { S.reportsDept = e.target.value; render(); };
+  document.getElementById("exportXlsx").onclick = () => exportToExcel();
+
+  // ---- Charts: pure CSS/HTML (no external chart library, so nothing can fail to load) ----
+  const dEl = document.getElementById("donutChart");
+  if (dEl) dEl.innerHTML = donutHtml(rd.totSafe, rd.totUnsafe, rd.totBarrier);
+  const bEl = document.getElementById("deptChart");
+  if (bEl) bEl.innerHTML = vbarsHtml(rd.deptLabels, rd.deptData, "var(--blue)");
+  const tEl = document.getElementById("topChart");
+  if (tEl) tEl.innerHTML = hbarsHtml(ranked.map(r => {
+    const it = ITEMS.find(x => x.no === r.no);
+    return { label: it.no + ". " + it.en, sub: it.th, value: r.count };
+  }));
+}
+
+function donutHtml(safe, unsafe, barrier) {
+  const total = safe + unsafe + barrier;
+  if (!total) return '<div class="empty" style="padding:30px 10px;"><div class="big">&#128202;</div><div style="font-size:12.5px;">ยังไม่มีข้อมูลในช่วงที่เลือก</div></div>';
+  const p1 = safe / total * 100, p2 = p1 + unsafe / total * 100;
+  const pct = v => (v / total * 100).toFixed(1) + "%";
+  return `
+    <div class="donutbox">
+      <div class="donut" style="background:conic-gradient(var(--green) 0 ${p1}%, var(--red) ${p1}% ${p2}%, var(--steel) ${p2}% 100%);">
+        <div class="donut-hole"><b>${total}</b><span>ข้อที่ตรวจ</span></div>
+      </div>
+      <div class="legend">
+        <div><i style="background:var(--green)"></i>Safe <b>${safe}</b> <em>${pct(safe)}</em></div>
+        <div><i style="background:var(--red)"></i>Unsafe <b>${unsafe}</b> <em>${pct(unsafe)}</em></div>
+        <div><i style="background:var(--steel)"></i>Barriers (B) <b>${barrier}</b> <em>${pct(barrier)}</em></div>
+      </div>
+    </div>`;
+}
+
+function vbarsHtml(labels, values, color) {
+  if (!labels.length) return '<div class="empty" style="padding:30px 10px;"><div class="big">&#128202;</div><div style="font-size:12.5px;">ไม่มีข้อมูลในช่วงที่เลือก</div></div>';
+  const max = Math.max(...values, 1), plot = 170;
+  return `<div class="vbars">${labels.map((l, i) => `
+    <div class="vbar">
+      <div class="vplot"><div class="vval">${values[i]}</div><div class="vcol" style="height:${Math.max(3, Math.round(values[i] / max * plot))}px;background:${color};"></div></div>
+      <div class="vlab" title="${esc(l)}">${esc(l)}</div>
+    </div>`).join("")}</div>`;
+}
+
+function hbarsHtml(rows) {
+  const max = Math.max(...rows.map(r => r.value), 1);
+  return `<div class="hbars">${rows.map(r => `
+    <div class="hrow">
+      <div class="hlab"><span>${esc(r.label)}</span><small>${esc(r.sub || "")}</small></div>
+      <div class="htrack"><div class="hfill" style="width:${Math.max(2, r.value / max * 100)}%;"></div></div>
+      <div class="hval">${r.value}</div>
+    </div>`).join("")}</div>`;
+}
+
+async function exportToExcel() {
+  if (!window.XLSX) { toast("ไม่สามารถโหลดไลบรารี Excel ได้"); return; }
+  const btn = document.getElementById("exportXlsx");
+  if (btn) { btn.disabled = true; btn.textContent = "กำลังสร้างไฟล์…"; }
+  try {
+    const rd = computeReportData();
+
+    // ---- Sheet: Department x Month summary (last 12 months, across ALL data) ----
+    const months = [];
+    { const base = new Date(); base.setDate(1);
+      for (let i = 11; i >= 0; i--) {
+        const dd = new Date(base.getFullYear(), base.getMonth() - i, 1);
+        months.push(dd.toISOString().slice(0, 7));
+      } }
+    const deptSet = new Set(S.observations.map(o => o.department || "(ไม่ระบุ)"));
+    S.departments.forEach(d => deptSet.add(d.name));
+    const depts = Array.from(deptSet);
+    const summaryAoA = [["แผนก / Department", ...months.map(monthLabelTh), "รวม / Total"]];
+    depts.forEach(dep => {
+      const row = [dep];
+      let total = 0;
+      months.forEach(m => {
+        const c = S.observations.filter(o => (o.department || "(ไม่ระบุ)") === dep && (o.date || "").slice(0, 7) === m).length;
+        row.push(c); total += c;
+      });
+      row.push(total);
+      summaryAoA.push(row);
+    });
+    const wsSummary = XLSX.utils.aoa_to_sheet(summaryAoA);
+
+    // ---- Sheet: Top unsafe items (full ranking, current filter scope) ----
+    const topAoA = [["อันดับ", "ข้อที่", "หมวดหมู่ (EN)", "หมวดหมู่ (TH)", "หัวข้อ (EN)", "หัวข้อ (TH)", "จำนวนครั้ง Unsafe"]];
+    rd.rankedFull.forEach((r, i) => {
+      const item = ITEMS.find(x => x.no === r.no);
+      const cat = CATS[item.catIndex];
+      topAoA.push([i + 1, item.no, cat[0], cat[1], item.en, item.th, r.count]);
+    });
+    const wsTop = XLSX.utils.aoa_to_sheet(topAoA);
+
+    // ---- Sheet: Observations (current filter scope) ----
+    const obsAoA = [["ID", "วันที่", "แผนก", "พื้นที่", "งานที่สังเกต", "ผู้สังเกตการณ์", "ผู้ถูกสังเกต", "ประเภท", "Safe", "Unsafe", "Barriers (B)", "Coached", "วันครบกำหนดติดตาม", "ความเห็นเพิ่มเติม"]];
+    rd.scope.forEach(o => {
+      const t = o.totals || computeTotals(o.checklist);
+      obsAoA.push([o.id || "", o.date || "", o.department || "", o.area || "", o.taskObserved || "", o.observerName || "", o.personObserved || "", o.obsType || "", t.safe, t.unsafe, t.na, o.coached || "", o.followUpDueDate || "", o.overallComments || ""]);
+    });
+    const wsObs = XLSX.utils.aoa_to_sheet(obsAoA);
+
+    // ---- Sheet: Checklist detail (current filter scope) ----
+    const detAoA = [["Obs ID", "วันที่", "แผนก", "พื้นที่", "ข้อที่", "หมวดหมู่", "หัวข้อ (EN)", "หัวข้อ (TH)", "สถานะ", "หมายเหตุ"]];
+    rd.scope.forEach(o => {
+      ITEMS.forEach(it => {
+        const v = o.checklist && o.checklist[it.no];
+        if (!v || !v.status) return;
+        const cat = CATS[it.catIndex];
+        const statusLabel = v.status === "S" ? "Safe" : v.status === "U" ? "Unsafe" : "Barriers (B)";
+        detAoA.push([o.id || "", o.date || "", o.department || "", o.area || "", it.no, cat[0], it.en, it.th, statusLabel, v.comment || ""]);
+      });
+    });
+    const wsDet = XLSX.utils.aoa_to_sheet(detAoA);
+
+    // ---- Sheet: Action plan (current filter scope) ----
+    const apAoA = [["Obs ID", "วันที่", "แผนก", "พื้นที่", "มาตรการแก้ไข", "ผู้รับผิดชอบ", "วันครบกำหนด", "สถานะ", "แก้ไขล่าสุดโดย", "วันที่แก้ไขล่าสุด"]];
+    rd.scope.forEach(o => {
+      (o.actionPlan || []).forEach(a => {
+        const stLabel = a.status === "done" ? "เสร็จสิ้น" : a.status === "in_progress" ? "กำลังทำ" : "เปิด";
+        apAoA.push([o.id || "", o.date || "", o.department || "", o.area || "", a.action || "", a.responsible || "", a.dueDate || "", stLabel, a.updatedByName || "", a.updatedAt || ""]);
+      });
+    });
+    const wsAp = XLSX.utils.aoa_to_sheet(apAoA);
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, wsSummary, "Dept-Month Summary");
+    XLSX.utils.book_append_sheet(wb, wsTop, "Top Unsafe Items");
+    XLSX.utils.book_append_sheet(wb, wsObs, "Observations");
+    XLSX.utils.book_append_sheet(wb, wsDet, "Checklist Detail");
+    XLSX.utils.book_append_sheet(wb, wsAp, "Action Plan");
+
+    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    const blob = new Blob([wbout], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const filename = "BBS_Report_" + todayISO() + ".xlsx";
+
+    // Plain browser download (works in any standard web browser)
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    toast("ดาวน์โหลดไฟล์แล้ว / Downloaded");
+  } catch (e) {
+    console.error(e);
+    toast("สร้างไฟล์ไม่สำเร็จ / Export failed");
+  } finally {
+    const btn2 = document.getElementById("exportXlsx");
+    if (btn2) { btn2.disabled = false; btn2.textContent = "⬇ Export Excel"; }
+  }
+}
+
+function renderDepartments() {
+  const rows = S.departments.map(d => {
+    const count = S.observations.filter(o => o.department === d.name).length;
+    return `
+      <div class="deptrow">
+        <div><span class="nm">${esc(d.name)}</span>${d.nameTh ? `<span class="nmth">${esc(d.nameTh)}</span>` : ``}</div>
+        <span class="pill grey">${count} รายการ</span>
+      </div>
+    `;
+  }).join("");
+
+  renderShell(`
+    <h2 style="margin-bottom:4px;">แผนก / Departments</h2>
+    <div style="color:var(--steel);font-size:13px;margin-bottom:16px;">จัดการรายชื่อแผนกที่ใช้ในระบบ</div>
+
+    <div class="card">
+      <div class="formgrid">
+        <div><label class="field-label">ชื่อแผนก (EN)</label><input type="text" id="d_en" placeholder="e.g. Maintenance"></div>
+        <div><label class="field-label">ชื่อแผนก (TH)</label><input type="text" id="d_th" placeholder="เช่น ซ่อมบำรุง"></div>
+      </div>
+      <button class="btn amber" id="d_add" style="margin-top:12px;">+ เพิ่มแผนก / Add department</button>
+    </div>
+
+    <div class="deptlist">${rows || `<div class="empty"><div class="big">&#127970;</div><div>ยังไม่มีแผนก เพิ่มแผนกแรกของคุณด้านบน</div></div>`}</div>
+
+    <div class="card" style="margin-top:20px;">
+      <div style="font-weight:600;margin-bottom:6px;font-size:13.5px;">บัญชีของฉัน / My account</div>
+      <div style="font-size:13px;color:var(--steel);">${esc(S.session ? S.session.name : "")} • ${esc(S.session ? S.session.department : "")}</div>
+      <button class="btn small" id="switchDeptBtn" style="margin-top:10px;">เปลี่ยนแผนกของฉัน / Change my department</button>
+    </div>
+  `);
+
+  document.getElementById("d_add").onclick = async () => {
+    const en = document.getElementById("d_en").value;
+    const th = document.getElementById("d_th").value;
+    if (!en.trim() && !th.trim()) { toast("กรุณากรอกชื่อแผนก"); return; }
+    await addDepartment(en, th);
+    document.getElementById("d_en").value = "";
+    document.getElementById("d_th").value = "";
+  };
+  document.getElementById("switchDeptBtn").onclick = () => { S.view = "profile"; render(); };
+}
+
+/* ============================================================
+   MAIN RENDER DISPATCH
+   ============================================================ */
+function render() {
+  if (!capabilitiesReady) return;
+  if (!FB_CONFIGURED || !fbAuth) { renderSetupNotice(); return; }
+  if (!S.authReady) {
+    root.innerHTML = '<div id="loading-screen"><div class="spinner"></div><div>กำลังโหลด… / Loading…</div></div>';
+    return;
+  }
+  if (!S.user) { renderLogin(); return; }
+  if (S.view === "profile" || !S.session) { renderProfile(); return; }
+  if (S.view === "form") { renderForm(); return; }
+  if (S.view === "tracker") { renderTracker(); return; }
+  if (S.view === "reports") { renderReports(); return; }
+  if (S.view === "departments") { renderDepartments(); return; }
+  renderDashboard();
+}
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+(async function boot() {
+  await initCapabilities();
+  if (fbAuth) {
+    subscribeDepartments();
+    startAuthListener();
+  }
+  render();
+})();
+
+})();
+</script>
+</body>
+</html>
