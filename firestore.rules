@@ -2,40 +2,49 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function signedIn() { return request.auth != null; }
+    function signedIn() {
+      return request.auth != null;
+    }
 
-    // ---- ตัวเลือก: จำกัดให้เฉพาะอีเมลบริษัทเท่านั้น (เอา // ออกแล้วแก้โดเมน) ----
-    // function allowedUser() {
-    //   return signedIn()
-    //     && request.auth.token.email_verified == true
-    //     && request.auth.token.email.matches('.*@yourcompany[.]com');
-    // }
-    // แล้วเปลี่ยน signedIn() ในกฎด้านล่างทั้งหมดเป็น allowedUser()
+    // IMPORTANT: keep this list identical to window.ADMIN_EMAILS in
+    // firebase-config.js. Firestore rules cannot read a JS file, so the
+    // admin list must be duplicated here. If you add/remove an admin in
+    // one place, update the other and re-publish these rules.
+    function isAdmin() {
+      return signedIn() && request.auth.token.email in [
+        "naowadee.k@gmail.com"
+        // , "another.admin@example.com"
+      ];
+    }
 
-    // โปรไฟล์ผู้ใช้: ดูได้ทุกคนที่ล็อกอิน แก้ได้เฉพาะของตัวเอง
+    // Departments: everyone signed in can read the list (so the
+    // dropdown / filters work), but only admins can create, rename
+    // or delete a department.
+    match /departments/{deptId} {
+      allow read: if signedIn();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Observations: any signed-in user can create and read (needed
+    // for shared dashboards/reports). Updates (e.g. action-plan
+    // follow-up, or editing from Dashboard/Reports) are allowed to
+    // any signed-in user, since collaborators follow up on each
+    // other's items. Only the original creator (or an admin) may
+    // delete.
+    match /observations/{obsId} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update: if signedIn();
+      allow delete: if signedIn() && (resource.data.createdBy == request.auth.uid || isAdmin());
+    }
+
+    // User profiles: each user can read any profile (needed to show
+    // names in reports/submitters list) but can only write their own.
     match /users/{uid} {
       allow read: if signedIn();
-      allow create, update: if signedIn() && request.auth.uid == uid;
-      allow delete: if false;
-    }
-
-    // แผนก: ทุกคนอ่านได้ (ใช้ตอนสมัคร) / คนที่ล็อกอินเพิ่มได้ / ห้ามแก้-ลบ
-    match /departments/{id} {
-      allow read: if true;
-      allow create: if signedIn()
-        && request.resource.data.name is string
-        && request.resource.data.name.size() > 0
-        && request.resource.data.name.size() < 80;
-      allow update, delete: if false;
-    }
-
-    // รายการสังเกต + Action Plan: คนที่ล็อกอินอ่านได้ทั้งหมด
-    // แก้ไขได้ทุกคนที่ล็อกอิน (เพื่อให้ผู้รับผิดชอบอัปเดตสถานะได้) / ลบได้เฉพาะผู้สร้าง
-    match /observations/{id} {
-      allow read: if signedIn();
-      allow create: if signedIn() && request.resource.data.createdBy == request.auth.uid;
-      allow update: if signedIn();
-      allow delete: if signedIn() && resource.data.createdBy == request.auth.uid;
+      allow write: if signedIn() && request.auth.uid == uid;
     }
   }
 }
