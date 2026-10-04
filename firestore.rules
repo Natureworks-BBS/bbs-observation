@@ -12,7 +12,7 @@ service cloud.firestore {
     // one place, update the other and re-publish these rules.
     function isAdmin() {
       return signedIn() && request.auth.token.email in [
-        "naowadee.k@gmail.com","Naowadee_Kotwit@NatureWorkspla.com"
+        "naowadee.k@gmail.com"
         // , "another.admin@example.com"
       ];
     }
@@ -21,6 +21,15 @@ service cloud.firestore {
     // dropdown / filters work), but only admins can create, rename
     // or delete a department.
     match /departments/{deptId} {
+      allow read: if signedIn();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Areas (พื้นที่ที่พบ): same pattern as departments — everyone
+    // signed in can read the list, only admins manage it.
+    match /areas/{areaId} {
       allow read: if signedIn();
       allow create: if isAdmin();
       allow update: if isAdmin();

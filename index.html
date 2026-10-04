@@ -444,6 +444,7 @@ const S = {
   view: "loading",
   session: null,              // { name, department, uid, email }
   departments: [],            // [{id, name, nameTh}]
+  areas: [],                   // [{id, name, nameTh}]
   observations: [],
   editingObs: null,
   openCats: new Set(),
@@ -486,7 +487,7 @@ function isAdmin() {
 const FB_CFG = window.FIREBASE_CONFIG || null;
 const FB_CONFIGURED = !!(window.firebase && FB_CFG && FB_CFG.apiKey && FB_CFG.projectId && !/YOUR_|xxxx/i.test(FB_CFG.apiKey + FB_CFG.projectId));
 let fbAuth = null, fbDb = null;
-let unsubObs = null, unsubDept = null;
+let unsubObs = null, unsubDept = null, unsubArea = null;
 
 async function initCapabilities() {
   if (FB_CONFIGURED) {
@@ -556,6 +557,46 @@ async function renameDepartment(id, nameEn, nameTh) {
 async function deleteDepartment(id) {
   if (!isAdmin()) { toast("เฉพาะแอดมินเท่านั้นที่ลบได้"); return; }
   try { await fbDb.collection("departments").doc(id).delete(); toast("ลบแผนกแล้ว"); }
+  catch (e) { toast("ลบไม่สำเร็จ: " + fbErr(e)); }
+}
+
+/* ---------- Areas: everyone reads, only admins write ---------- */
+function subscribeAreas() {
+  if (!fbDb) return;
+  if (unsubArea) unsubArea();
+  unsubArea = fbDb.collection("areas").onSnapshot(
+    snap => {
+      S.areas = snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }))
+        .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+      render();
+    },
+    err => console.warn("areas listener:", err)
+  );
+}
+
+async function addArea(nameEn, nameTh) {
+  nameEn = (nameEn || "").trim(); nameTh = (nameTh || "").trim();
+  if (!nameEn && !nameTh) return;
+  if (!isAdmin()) { toast("เฉพาะแอดมินเท่านั้นที่เพิ่มพื้นที่ได้"); return; }
+  const name = nameEn || nameTh;
+  if (S.areas.some(a => (a.name || "").toLowerCase() === name.toLowerCase())) { toast("มีพื้นที่นี้อยู่แล้ว"); return; }
+  try {
+    await fbDb.collection("areas").add({ name, nameTh, createdAt: new Date().toISOString(), createdBy: S.user.uid });
+    toast("เพิ่มพื้นที่แล้ว / Area added");
+  } catch (e) { toast("เพิ่มพื้นที่ไม่สำเร็จ: " + fbErr(e)); }
+}
+
+async function renameArea(id, nameEn, nameTh) {
+  if (!isAdmin()) { toast("เฉพาะแอดมินเท่านั้นที่แก้ไขได้"); return; }
+  try {
+    await fbDb.collection("areas").doc(id).update({ name: nameEn || nameTh, nameTh: nameTh || "" });
+    toast("แก้ไขพื้นที่แล้ว");
+  } catch (e) { toast("แก้ไขไม่สำเร็จ: " + fbErr(e)); }
+}
+
+async function deleteArea(id) {
+  if (!isAdmin()) { toast("เฉพาะแอดมินเท่านั้นที่ลบได้"); return; }
+  try { await fbDb.collection("areas").doc(id).delete(); toast("ลบพื้นที่แล้ว"); }
   catch (e) { toast("ลบไม่สำเร็จ: " + fbErr(e)); }
 }
 
@@ -723,7 +764,7 @@ function renderShell(innerHtml) {
         <button class="navitem" data-view="form"><span class="ic">&#43;</span> สังเกตใหม่ / New</button>
         <button class="navitem" data-view="tracker"><span class="ic">&#9998;</span> ติดตามแก้ไข / Actions</button>
         <button class="navitem" data-view="reports"><span class="ic">&#128202;</span> รายงานสรุป / Reports</button>
-        <button class="navitem" data-view="departments"><span class="ic">&#127970;</span> แผนก / Depts</button>
+        <button class="navitem" data-view="departments"><span class="ic">&#127970;</span> แผนก/พื้นที่ / Depts</button>
         <div class="navdivider"></div>
         <button class="navitem" id="switchuser"><span class="ic">&#10162;</span> ออกจากระบบ / Sign out</button>
         <div class="navfoot">${esc(S.session && S.session.email || "")}<br>ข้อมูลใช้ร่วมกันทุกคน (Firebase)</div>
@@ -984,6 +1025,12 @@ function renderForm() {
   const deptOptions = S.departments.map(d =>
     `<option value="${esc(d.name)}" ${obs.department === d.name ? "selected" : ""}>${esc(d.name)}</option>`
   ).join("");
+  const areaOptionsForm = S.areas.map(a =>
+    `<option value="${esc(a.name)}" ${obs.area === a.name ? "selected" : ""}>${esc(a.name)}${a.nameTh ? " / " + esc(a.nameTh) : ""}</option>`
+  ).join("");
+  // Keep a legacy free-typed area value selectable even if it's not in the
+  // admin-managed list yet (e.g. older observations saved before this list existed).
+  const areaHasLegacy = obs.area && !S.areas.some(a => a.name === obs.area);
 
   const catsHtml = CATS.map((cat, ci) => {
     const items = ITEMS.filter(it => it.catIndex === ci);
@@ -1042,7 +1089,18 @@ function renderForm() {
         <div><label class="field-label">วันที่ / Date</label><input type="date" id="f_date" value="${esc(obs.date)}"></div>
         <div><label class="field-label">เวลา / Time</label><input type="text" id="f_time" value="${esc(obs.time)}"></div>
         <div><label class="field-label">แผนก / Department</label><select id="f_dept"><option value="">— เลือก —</option>${deptOptions}</select></div>
-        <div><label class="field-label">พื้นที่ที่พบ / Area</label><input type="text" id="f_area" value="${esc(obs.area)}" placeholder="เช่น Line 2, Warehouse A"></div>
+        <div><label class="field-label">พื้นที่ที่พบ / Area</label>
+          ${S.areas.length === 0 ? `
+            <input type="text" id="f_area" value="${esc(obs.area)}" placeholder="เช่น Line 2, Warehouse A">
+            <div class="notice" style="margin-top:6px;padding:8px 10px;font-size:11.5px;">ยังไม่มีรายชื่อพื้นที่ในระบบ — แอดมินสามารถเพิ่มได้ที่หน้า "แผนก / Depts"</div>
+          ` : `
+            <select id="f_area">
+              <option value="">— เลือกพื้นที่ / select —</option>
+              ${areaOptionsForm}
+              ${areaHasLegacy ? `<option value="${esc(obs.area)}" selected>${esc(obs.area)}</option>` : ``}
+            </select>
+          `}
+        </div>
         <div><label class="field-label">งานที่สังเกต / Task observed</label><input type="text" id="f_task" value="${esc(obs.taskObserved)}"></div>
         <div><label class="field-label">ผู้ถูกสังเกต / Person observed</label><input type="text" id="f_person" value="${esc(obs.personObserved)}"></div>
         <div><label class="field-label">ผู้สังเกตการณ์ / Observer</label><input type="text" id="f_observer" value="${esc(obs.observerName)}"></div>
@@ -1302,6 +1360,7 @@ function computeReportData() {
 
   const areaSet = new Set();
   S.observations.forEach(o => { if (!S.reportsDept || o.department === S.reportsDept) areaSet.add(o.area || "(ไม่ระบุพื้นที่)"); });
+  if (!S.reportsDept) S.areas.forEach(a => areaSet.add(a.name)); // show admin-configured areas even with 0 observations yet
 
   return { scope, totSafe, totUnsafe, totBarrier, itemUnsafeCount, deptLabels, deptData, submitters, areaList: Array.from(areaSet).sort() };
 }
@@ -1558,12 +1617,29 @@ function renderDepartments() {
       </div>`;
   }).join("");
 
+  const areaRows = S.areas.map(a => {
+    const count = S.observations.filter(o => o.area === a.name).length;
+    return `
+      <div class="deptrow" data-arow="${esc(a.id)}">
+        <div class="dinfo"><span class="nm">${esc(a.name)}</span>${a.nameTh ? `<span class="nmth">${esc(a.nameTh)}</span>` : ``}</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="pill grey">${count} รายการ</span>
+          ${admin ? `
+            <div class="dactions">
+              <button class="btn small ghost" data-arename="${esc(a.id)}">แก้ไข</button>
+              <button class="btn small danger" data-adelete="${esc(a.id)}">ลบ</button>
+            </div>` : ``}
+        </div>
+      </div>`;
+  }).join("");
+
   renderShell(`
-    <h2 style="margin-bottom:4px;">แผนก / Departments</h2>
+    <h2 style="margin-bottom:4px;">แผนก & พื้นที่ / Departments &amp; Areas</h2>
     <div style="color:var(--steel);font-size:13px;margin-bottom:16px;">
-      ${admin ? "จัดการรายชื่อแผนกที่ใช้ในระบบ (คุณเป็นแอดมิน)" : "รายชื่อแผนกนี้กำหนดโดยผู้ดูแลระบบ หากต้องการเพิ่ม/แก้ไข กรุณาติดต่อแอดมิน"}
+      ${admin ? "จัดการรายชื่อแผนกและพื้นที่ที่ใช้ในระบบ (คุณเป็นแอดมิน)" : "รายชื่อแผนกและพื้นที่นี้กำหนดโดยผู้ดูแลระบบ หากต้องการเพิ่ม/แก้ไข กรุณาติดต่อแอดมิน"}
     </div>
 
+    <div class="section-title" style="margin-top:0;">แผนก / Departments</div>
     ${admin ? `
     <div class="card">
       <div class="formgrid">
@@ -1574,6 +1650,18 @@ function renderDepartments() {
     </div>` : `<div class="notice">👁️ คุณกำลังดูในโหมดอ่านอย่างเดียว — เฉพาะแอดมินเท่านั้นที่เพิ่ม/แก้ไข/ลบแผนกได้</div>`}
 
     <div class="deptlist">${rows || `<div class="empty"><div class="big">&#127970;</div><div>${admin ? "ยังไม่มีแผนก เพิ่มแผนกแรกของคุณด้านบน" : "ยังไม่มีแผนกในระบบ กรุณาติดต่อแอดมิน"}</div></div>`}</div>
+
+    <div class="section-title">พื้นที่ที่พบ / Areas</div>
+    ${admin ? `
+    <div class="card">
+      <div class="formgrid">
+        <div><label class="field-label">ชื่อพื้นที่ (EN)</label><input type="text" id="a_en" placeholder="e.g. Warehouse A"></div>
+        <div><label class="field-label">ชื่อพื้นที่ (TH)</label><input type="text" id="a_th" placeholder="เช่น คลังสินค้า A"></div>
+      </div>
+      <button class="btn amber" id="a_add" style="margin-top:12px;">+ เพิ่มพื้นที่ / Add area</button>
+    </div>` : `<div class="notice">👁️ คุณกำลังดูในโหมดอ่านอย่างเดียว — เฉพาะแอดมินเท่านั้นที่เพิ่ม/แก้ไข/ลบพื้นที่ได้</div>`}
+
+    <div class="deptlist">${areaRows || `<div class="empty"><div class="big">&#128205;</div><div>${admin ? "ยังไม่มีพื้นที่ เพิ่มพื้นที่แรกของคุณด้านบน" : "ยังไม่มีพื้นที่ในระบบ กรุณาติดต่อแอดมิน"}</div></div>`}</div>
 
     <div class="card" style="margin-top:20px;">
       <div style="font-weight:600;margin-bottom:6px;font-size:13.5px;">บัญชีของฉัน / My account</div>
@@ -1612,6 +1700,36 @@ function renderDepartments() {
       if (!confirm(`ลบแผนก "${dep.name}" ใช่หรือไม่?`)) return;
       await deleteDepartment(dep.id);
     });
+
+    document.getElementById("a_add").onclick = async () => {
+      const en = document.getElementById("a_en").value;
+      const th = document.getElementById("a_th").value;
+      if (!en.trim() && !th.trim()) { toast("กรุณากรอกชื่อพื้นที่"); return; }
+      await addArea(en, th);
+      document.getElementById("a_en").value = ""; document.getElementById("a_th").value = "";
+    };
+    document.querySelectorAll("[data-arename]").forEach(btn => btn.onclick = () => {
+      const row = document.querySelector(`[data-arow="${btn.dataset.arename}"]`);
+      const ar = S.areas.find(a => a.id === btn.dataset.arename);
+      if (!row || !ar) return;
+      row.querySelector(".dinfo").innerHTML = `
+        <input type="text" class="renameinput" id="aren_en_${ar.id}" value="${esc(ar.name)}" style="width:110px;display:inline-block;">
+        <input type="text" class="renameinput" id="aren_th_${ar.id}" value="${esc(ar.nameTh || "")}" style="width:110px;display:inline-block;margin-left:4px;">
+        <button class="btn small amber" id="aren_ok_${ar.id}" style="margin-left:4px;">บันทึก</button>
+        <button class="btn small ghost" id="aren_cancel_${ar.id}">ยกเลิก</button>`;
+      document.getElementById(`aren_ok_${ar.id}`).onclick = async () => {
+        const en = document.getElementById(`aren_en_${ar.id}`).value;
+        const th = document.getElementById(`aren_th_${ar.id}`).value;
+        await renameArea(ar.id, en, th);
+      };
+      document.getElementById(`aren_cancel_${ar.id}`).onclick = () => render();
+    });
+    document.querySelectorAll("[data-adelete]").forEach(btn => btn.onclick = async () => {
+      const ar = S.areas.find(a => a.id === btn.dataset.adelete);
+      if (!ar) return;
+      if (!confirm(`ลบพื้นที่ "${ar.name}" ใช่หรือไม่?`)) return;
+      await deleteArea(ar.id);
+    });
   }
 
   document.getElementById("switchDeptBtn").onclick = () => { S.view = "profile"; render(); };
@@ -1638,7 +1756,7 @@ function render() {
    ============================================================ */
 (async function boot() {
   await initCapabilities();
-  if (fbAuth) { subscribeDepartments(); startAuthListener(); }
+  if (fbAuth) { subscribeDepartments(); subscribeAreas(); startAuthListener(); }
   render();
 })();
 
