@@ -12,7 +12,7 @@ service cloud.firestore {
     // one place, update the other and re-publish these rules.
     function isAdmin() {
       return signedIn() && request.auth.token.email in [
-        "naowadee.k@gmail.com"
+        "naowadee.k@gmail.com","Naowadee_Kotwit@NatureWorkspla.com"
         // , "another.admin@example.com"
       ];
     }
