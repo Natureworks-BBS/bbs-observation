@@ -7,6 +7,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Firebase (compat SDK: works on GitHub Pages with no build step) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<!-- Your Firebase project settings + admin list live in this file -->
+<script src="firebase-config.js"></script>
+<!-- Excel export -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root {
     --font-head: "Barlow Semi Condensed", "Segoe UI", Tahoma, sans-serif;
@@ -43,201 +51,72 @@
   }
   :root:not([data-theme="light"]) {
     @media (prefers-color-scheme: dark) {
-      --ink: #ECEEF0;
-      --ink-soft: #C7CCD3;
-      --steel: #96A0AC;
-      --paper: #14181D;
-      --surface: #1B2027;
-      --surface-2: #20262E;
-      --line: #2C333C;
-      --line-strong: #3A4249;
-      --amber-bg: #3A2C10;
-      --amber-ink: #F2C87B;
-      --green-bg: #16301F;
-      --red-bg: #3A1912;
-      --blue-bg: #17252E;
+      --ink: #ECEEF0; --ink-soft: #C7CCD3; --steel: #96A0AC;
+      --paper: #14181D; --surface: #1B2027; --surface-2: #20262E;
+      --line: #2C333C; --line-strong: #3A4249;
+      --amber-bg: #3A2C10; --amber-ink: #F2C87B;
+      --green-bg: #16301F; --red-bg: #3A1912; --blue-bg: #17252E;
       --grey-bg: #232A32;
       color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
-    --ink: #ECEEF0;
-    --ink-soft: #C7CCD3;
-    --steel: #96A0AC;
-    --paper: #14181D;
-    --surface: #1B2027;
-    --surface-2: #20262E;
-    --line: #2C333C;
-    --line-strong: #3A4249;
-    --amber-bg: #3A2C10;
-    --amber-ink: #F2C87B;
-    --green-bg: #16301F;
-    --red-bg: #3A1912;
-    --blue-bg: #17252E;
+    --ink: #ECEEF0; --ink-soft: #C7CCD3; --steel: #96A0AC;
+    --paper: #14181D; --surface: #1B2027; --surface-2: #20262E;
+    --line: #2C333C; --line-strong: #3A4249;
+    --amber-bg: #3A2C10; --amber-ink: #F2C87B;
+    --green-bg: #16301F; --red-bg: #3A1912; --blue-bg: #17252E;
     --grey-bg: #232A32;
     color-scheme: dark;
   }
 
   * { box-sizing: border-box; }
-  html, body {
-    height: 100%;
-    margin: 0;
-    background: var(--paper);
-    color: var(--ink);
-    font-family: var(--font-body);
-    -webkit-font-smoothing: antialiased;
-  }
-  body {
-    padding-top: env(safe-area-inset-top, 0px);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
+  html, body { height: 100%; margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+  body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
   html { scroll-padding-top: env(safe-area-inset-top, 0px); }
   img { max-width: 100%; }
   button { font-family: inherit; }
   input, select, textarea { font-family: inherit; font-size: 14px; }
-
-  h1, h2, h3, .head {
-    font-family: var(--font-head);
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    margin: 0;
-    color: var(--ink);
-  }
+  h1, h2, h3, .head { font-family: var(--font-head); font-weight: 600; letter-spacing: 0.01em; margin: 0; color: var(--ink); }
 
   /* ---------- Top bar ---------- */
-  #topbar {
-    position: sticky;
-    top: env(safe-area-inset-top, 0px);
-    z-index: 40;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    height: 56px;
-    padding: 0 16px;
-    background: var(--ink);
-    color: #F5F1E6;
-  }
-  #topbar .brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-width: 0;
-  }
-  #topbar .brand .mark {
-    width: 30px; height: 30px;
-    border-radius: 6px;
-    background: var(--amber);
-    color: #2A1B02;
-    display: flex; align-items: center; justify-content: center;
-    font-family: var(--font-head);
-    font-weight: 700;
-    font-size: 15px;
-    flex: none;
-  }
+  #topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 40; display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 56px; padding: 0 16px; background: var(--ink); color: #F5F1E6; }
+  #topbar .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  #topbar .brand .mark { width: 30px; height: 30px; border-radius: 6px; background: var(--amber); color: #2A1B02; display: flex; align-items: center; justify-content: center; font-family: var(--font-head); font-weight: 700; font-size: 15px; flex: none; }
   #topbar .brand .titles { min-width: 0; }
-  #topbar .brand .titles .t1 {
-    font-family: var(--font-head);
-    font-weight: 600;
-    font-size: 17px;
-    line-height: 1.1;
-    letter-spacing: 0.02em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  #topbar .brand .titles .t2 {
-    font-size: 11px;
-    color: #B7BFC9;
-    white-space: nowrap;
-  }
-  #hamburger {
-    display: none;
-    background: none; border: none; color: #F5F1E6;
-    font-size: 20px; cursor: pointer; padding: 6px;
-  }
-  #userchip {
-    display: flex; align-items: center; gap: 8px;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.14);
-    border-radius: 999px;
-    padding: 4px 12px 4px 4px;
-    cursor: pointer;
-    color: inherit;
-    flex: none;
-  }
-  #userchip .av {
-    width: 26px; height: 26px; border-radius: 50%;
-    background: var(--amber); color: #2A1B02;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 12px; font-weight: 700; flex: none;
-    overflow: hidden;
-  }
-  #userchip .av img { width: 100%; height: 100%; object-fit: cover; }
+  #topbar .brand .titles .t1 { font-family: var(--font-head); font-weight: 600; font-size: 17px; line-height: 1.1; letter-spacing: 0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #topbar .brand .titles .t2 { font-size: 11px; color: #B7BFC9; white-space: nowrap; }
+  #hamburger { display: none; background: none; border: none; color: #F5F1E6; font-size: 20px; cursor: pointer; padding: 6px; }
+  #userchip { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14); border-radius: 999px; padding: 4px 12px 4px 4px; cursor: pointer; color: inherit; flex: none; }
+  #userchip .av { width: 26px; height: 26px; border-radius: 50%; background: var(--amber); color: #2A1B02; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex: none; overflow: hidden; }
   #userchip .meta { text-align: left; line-height: 1.15; min-width: 0; }
   #userchip .meta .nm { font-size: 12.5px; font-weight: 600; white-space: nowrap; max-width: 140px; overflow:hidden; text-overflow: ellipsis; }
   #userchip .meta .dp { font-size: 11px; color: #B7BFC9; white-space: nowrap; max-width: 140px; overflow:hidden; text-overflow: ellipsis;}
+  .adminbadge { display:inline-block; font-size:9.5px; font-weight:700; letter-spacing:.04em; background: var(--amber); color:#2A1B02; border-radius:999px; padding:1px 7px; margin-left:6px; vertical-align:1px; }
 
   /* ---------- Shell layout ---------- */
   #shell { display: flex; min-height: calc(100% - 56px); }
-  #nav {
-    width: 220px; flex: none;
-    background: var(--surface);
-    border-right: 1px solid var(--line);
-    padding: 18px 10px;
-  }
-  #nav button.navitem {
-    display: flex; align-items: center; gap: 10px;
-    width: 100%; text-align: left;
-    background: none; border: none;
-    padding: 10px 12px; margin-bottom: 2px;
-    border-radius: var(--radius-s);
-    font-size: 14px; font-weight: 500;
-    color: var(--ink-soft);
-    cursor: pointer;
-  }
+  #nav { width: 220px; flex: none; background: var(--surface); border-right: 1px solid var(--line); padding: 18px 10px; }
+  #nav button.navitem { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: none; border: none; padding: 10px 12px; margin-bottom: 2px; border-radius: var(--radius-s); font-size: 14px; font-weight: 500; color: var(--ink-soft); cursor: pointer; }
   #nav button.navitem .ic { width: 18px; text-align: center; font-size: 15px; }
   #nav button.navitem:hover { background: var(--surface-2); }
   #nav button.navitem.active { background: var(--amber-bg); color: var(--amber-ink); font-weight: 600; }
   #nav .navdivider { height: 1px; background: var(--line); margin: 10px 4px; }
-  #nav .navfoot { padding: 10px 12px; font-size: 11.5px; color: var(--steel); }
-
-  #navscrim { display: none; }
-
-  main#content { flex: 1; min-width: 0; padding: 20px; padding-bottom: 60px; }
-  .wrap { max-width: 980px; margin: 0 auto; }
-
+  #nav .navfoot { padding: 10px 12px; font-size: 11.5px; color: var(--steel); line-height:1.5; }
   @media (max-width: 860px) {
     #hamburger { display: inline-block; }
-    #nav {
-      position: fixed; top: 56px; bottom: 0; left: 0; z-index: 50;
-      transform: translateX(-100%);
-      transition: transform .2s ease;
-      box-shadow: 2px 0 12px rgba(0,0,0,0.15);
-      overflow-y: auto;
-      padding-top: calc(18px + env(safe-area-inset-top, 0px));
-    }
+    #nav { position: fixed; top: 56px; bottom: 0; left: 0; z-index: 50; transform: translateX(-100%); transition: transform .2s ease; box-shadow: 2px 0 12px rgba(0,0,0,0.15); overflow-y: auto; padding-top: calc(18px + env(safe-area-inset-top, 0px)); }
     #nav.open { transform: translateX(0); }
-    #navscrim.open {
-      display: block; position: fixed; inset: 56px 0 0 0; z-index: 45;
-      background: rgba(0,0,0,0.35);
-    }
+    #navscrim.open { display: block; position: fixed; inset: 56px 0 0 0; z-index: 45; background: rgba(0,0,0,0.35); }
     main#content { padding: 14px; }
     #userchip .meta { display: none; }
   }
+  #navscrim { display: none; }
+  main#content { flex: 1; min-width: 0; padding: 20px; padding-bottom: 60px; }
+  .wrap { max-width: 1040px; margin: 0 auto; }
 
   /* ---------- Generic bits ---------- */
-  .btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    border-radius: var(--radius-s);
-    border: 1px solid var(--line-strong);
-    background: var(--surface);
-    color: var(--ink);
-    padding: 9px 16px;
-    font-size: 13.5px; font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
-  }
+  .btn { display: inline-flex; align-items: center; gap: 6px; border-radius: var(--radius-s); border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); padding: 9px 16px; font-size: 13.5px; font-weight: 600; cursor: pointer; white-space: nowrap; }
   .btn:hover { background: var(--surface-2); }
   .btn.primary { background: var(--ink); border-color: var(--ink); color: #F5F1E6; }
   .btn.primary:hover { background: #232F3D; }
@@ -248,178 +127,91 @@
   .btn.small { padding: 6px 10px; font-size: 12.5px; }
   .btn:disabled { opacity: .5; cursor: default; }
 
-  label.field-label {
-    display: block; font-size: 12px; font-weight: 600;
-    color: var(--steel); margin-bottom: 4px;
-  }
-  input[type=text], input[type=date], input[type=number], select, textarea {
-    width: 100%;
-    border: 1px solid var(--line-strong);
-    background: var(--surface);
-    color: var(--ink);
-    border-radius: var(--radius-s);
-    padding: 8px 10px;
+  label.field-label { display: block; font-size: 12px; font-weight: 600; color: var(--steel); margin-bottom: 4px; }
+  input[type=text], input[type=date], input[type=number], input[type=password], input[type=email], select, textarea {
+    width: 100%; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink);
+    border-radius: var(--radius-s); padding: 8px 10px;
   }
   textarea { resize: vertical; min-height: 46px; }
-  input:focus, select:focus, textarea:focus, button:focus-visible {
-    outline: 2px solid var(--blue); outline-offset: 1px;
-  }
+  input:focus, select:focus, textarea:focus, button:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
 
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-m);
-    padding: 16px;
-  }
-
-  .section-title {
-    font-family: var(--font-head);
-    font-size: 13px; font-weight: 700;
-    letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--steel);
-    margin: 26px 0 10px;
-  }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-m); padding: 16px; }
+  .section-title { font-family: var(--font-head); font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--steel); margin: 26px 0 10px; }
   .section-title:first-child { margin-top: 0; }
 
-  .pill {
-    display: inline-flex; align-items: center;
-    border-radius: 999px; padding: 2px 10px;
-    font-size: 11.5px; font-weight: 600;
-  }
+  .pill { display: inline-flex; align-items: center; border-radius: 999px; padding: 2px 10px; font-size: 11.5px; font-weight: 600; }
   .pill.grey { background: var(--grey-bg); color: var(--steel); }
   .pill.amber { background: var(--amber-bg); color: var(--amber-ink); }
   .pill.green { background: var(--green-bg); color: var(--green); }
   .pill.red { background: var(--red-bg); color: var(--red); }
   .pill.blue { background: var(--blue-bg); color: var(--blue); }
 
-  .empty {
-    text-align: center; padding: 50px 20px; color: var(--steel);
-  }
+  .empty { text-align: center; padding: 50px 20px; color: var(--steel); }
   .empty .big { font-size: 34px; margin-bottom: 6px; }
 
-  .toast {
-    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
-    background: var(--ink); color: #F5F1E6;
-    padding: 10px 18px; border-radius: 999px; font-size: 13px;
-    z-index: 100; box-shadow: 0 6px 18px rgba(0,0,0,0.25);
-    opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease;
-  }
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--ink); color: #F5F1E6; padding: 10px 18px; border-radius: 999px; font-size: 13px; z-index: 100; box-shadow: 0 6px 18px rgba(0,0,0,0.25); opacity: 0; pointer-events: none; transition: opacity .2s ease, transform .2s ease; }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
 
-  /* ---------- Login ---------- */
-  #loginwrap {
-    min-height: calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
-    display: flex; align-items: center; justify-content: center;
-    padding: 24px;
-  }
-  .loginhead { background: var(--ink); }
-  .logincard {
-    width: 100%; max-width: 420px;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-m);
-    padding: 28px 26px 24px;
-  }
-  .logincard .brandbar {
-    display: flex; align-items: center; gap: 10px; margin-bottom: 18px;
-  }
-  .logincard .brandbar .mark {
-    width: 34px; height: 34px; border-radius: 7px; background: var(--amber);
-    color: #2A1B02; display:flex; align-items:center; justify-content:center;
-    font-family: var(--font-head); font-weight: 700; font-size: 17px;
-  }
+  /* ---------- Reminder bar ---------- */
+  #reminderbar { display:flex; align-items:center; gap:10px; padding:9px 16px; font-size:13px; background: var(--red-bg); color: var(--red); flex-wrap:wrap; }
+  #reminderbar.amberbar { background: var(--amber-bg); color: var(--amber-ink); }
+  #reminderbar button.linklike { background:none; border:none; padding:0; color:inherit; font-weight:700; text-decoration:underline; cursor:pointer; font-size:13px; }
+  #reminderbar .rbx { margin-left:auto; background:none; border:none; color:inherit; cursor:pointer; font-size:15px; padding:2px 4px; }
+
+  /* ---------- Login / auth ---------- */
+  #loginwrap { min-height: calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)); display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .logincard { width: 100%; max-width: 420px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-m); padding: 28px 26px 24px; }
+  .logincard .brandbar { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+  .logincard .brandbar .mark { width: 34px; height: 34px; border-radius: 7px; background: var(--amber); color: #2A1B02; display:flex; align-items:center; justify-content:center; font-family: var(--font-head); font-weight: 700; font-size: 17px; }
   .logincard h1 { font-size: 21px; margin-bottom: 2px; }
   .logincard .sub { font-size: 13px; color: var(--steel); margin-bottom: 20px; }
-  .identity-detected {
-    display: flex; align-items: center; gap: 10px;
-    background: var(--surface-2); border: 1px solid var(--line);
-    border-radius: var(--radius-s); padding: 10px 12px; margin-bottom: 16px;
-  }
-  .identity-detected .av {
-    width: 34px; height: 34px; border-radius: 50%; flex: none; overflow: hidden;
-    background: var(--amber); color:#2A1B02; display:flex;align-items:center;justify-content:center;
-    font-weight: 700; font-size: 13px;
-  }
-  .identity-detected .av img { width:100%; height:100%; object-fit: cover; }
-  .identity-detected .nm { font-weight: 600; font-size: 14px; }
-  .identity-detected .lb { font-size: 11px; color: var(--steel); }
   .field { margin-bottom: 14px; }
   .adddept-row { display: flex; gap: 8px; margin-top: 8px; }
   .adddept-row input { flex: 1; }
-  .notice {
-    font-size: 12px; color: var(--amber-ink); background: var(--amber-bg);
-    border-radius: var(--radius-s); padding: 8px 10px; margin-bottom: 14px;
-  }
+  .notice { font-size: 12px; color: var(--amber-ink); background: var(--amber-bg); border-radius: var(--radius-s); padding: 8px 10px; margin-bottom: 14px; }
+  .authtabs { display:flex; border:1px solid var(--line-strong); border-radius: var(--radius-s); overflow:hidden; margin-bottom:18px; }
+  .authtabs button { flex:1; border:none; background: var(--surface); color: var(--ink-soft); padding:9px; font-weight:600; font-size:13.5px; cursor:pointer; }
+  .authtabs button.active { background: var(--ink); color:#F5F1E6; }
+  .orline { display:flex; align-items:center; gap:10px; margin:14px 0; color: var(--steel); font-size:12px; }
+  .orline::before, .orline::after { content:""; flex:1; height:1px; background: var(--line); }
 
   /* ---------- Dashboard ---------- */
-  .toolbar {
-    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-    margin-bottom: 16px;
-  }
+  .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
   .toolbar select { width: auto; }
   .toolbar .spacer { flex: 1; }
-  .seg {
-    display: inline-flex; border: 1px solid var(--line-strong); border-radius: var(--radius-s); overflow: hidden;
-  }
-  .seg button {
-    border: none; background: var(--surface); color: var(--ink-soft);
-    padding: 7px 13px; font-size: 12.5px; font-weight: 600; cursor: pointer;
-    border-right: 1px solid var(--line-strong);
-  }
+  .seg { display: inline-flex; border: 1px solid var(--line-strong); border-radius: var(--radius-s); overflow: hidden; }
+  .seg button { border: none; background: var(--surface); color: var(--ink-soft); padding: 7px 13px; font-size: 12.5px; font-weight: 600; cursor: pointer; border-right: 1px solid var(--line-strong); }
   .seg button:last-child { border-right: none; }
   .seg button.active { background: var(--ink); color: #F5F1E6; }
 
   .obslist { display: flex; flex-direction: column; gap: 10px; }
-  .obscard {
-    display: flex; gap: 14px; align-items: stretch;
-    background: var(--surface); border: 1px solid var(--line);
-    border-left: 4px solid var(--line-strong);
-    border-radius: var(--radius-s);
-    padding: 12px 14px; cursor: pointer;
-  }
+  .obscard { display: flex; gap: 14px; align-items: stretch; background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--line-strong); border-radius: var(--radius-s); padding: 12px 14px; }
   .obscard:hover { border-color: var(--line-strong); background: var(--surface-2); }
   .obscard.status-open { border-left-color: var(--amber); }
   .obscard.status-closed { border-left-color: var(--green); }
-  .obscard .main { flex: 1; min-width: 0; }
+  .obscard .main { flex: 1; min-width: 0; cursor:pointer; }
   .obscard .row1 { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom: 4px;}
   .obscard .title { font-weight: 700; font-size: 14.5px; }
   .obscard .meta { font-size: 12px; color: var(--steel); }
-  .obscard .stats { display:flex; gap:14px; align-items:center; flex:none; }
-  .obscard .stat { text-align:center; min-width: 40px; }
+  .obscard .stats { display:flex; gap:12px; align-items:center; flex:none; }
+  .obscard .stat { text-align:center; min-width: 38px; }
   .obscard .stat b { display:block; font-size: 16px; font-family: var(--font-head); }
   .obscard .stat span { font-size: 10px; color: var(--steel); }
+  .obscard .editbtn { align-self:center; flex:none; }
 
   /* ---------- Observation form ---------- */
-  .formgrid {
-    display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px 16px;
-  }
+  .formgrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px 16px; }
   @media (max-width: 640px) { .formgrid { grid-template-columns: 1fr; } }
-
-  .totalsbar {
-    display: flex; gap: 10px; margin: 14px 0 4px; flex-wrap: wrap;
-  }
-  .totalsbar .tchip {
-    flex: 1; min-width: 90px; text-align: center;
-    border-radius: var(--radius-s); padding: 8px 6px;
-    font-family: var(--font-head);
-  }
+  .totalsbar { display: flex; gap: 10px; margin: 14px 0 4px; flex-wrap: wrap; }
+  .totalsbar .tchip { flex: 1; min-width: 90px; text-align: center; border-radius: var(--radius-s); padding: 8px 6px; font-family: var(--font-head); }
   .totalsbar .tchip b { display:block; font-size: 22px; line-height:1; }
   .totalsbar .tchip span { font-size: 11px; }
   .totalsbar .tchip.safe { background: var(--green-bg); color: var(--green); }
   .totalsbar .tchip.unsafe { background: var(--red-bg); color: var(--red); }
   .totalsbar .tchip.na { background: var(--grey-bg); color: var(--steel); }
-
   .accordion-controls { display: flex; justify-content: flex-end; gap: 8px; margin: 16px 0 6px; }
-
-  .category {
-    border: 1px solid var(--line); border-radius: var(--radius-s);
-    margin-bottom: 8px; overflow: hidden;
-  }
-  .category .cathead {
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 12px; background: var(--surface-2); cursor: pointer;
-    user-select: none;
-  }
+  .category { border: 1px solid var(--line); border-radius: var(--radius-s); margin-bottom: 8px; overflow: hidden; }
+  .category .cathead { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--surface-2); cursor: pointer; user-select: none; }
   .category .cathead .chv { font-size: 11px; color: var(--steel); transition: transform .15s; flex: none; }
   .category.open .cathead .chv { transform: rotate(90deg); }
   .category .cathead .names { flex: 1; min-width:0; }
@@ -428,27 +220,17 @@
   .category .cathead .badges { display:flex; gap:6px; flex:none; }
   .category .catbody { display: none; padding: 4px 12px 10px; }
   .category.open .catbody { display: block; }
-
-  .item-row {
-    display: flex; align-items: center; gap: 10px;
-    padding: 8px 0; border-top: 1px solid var(--line);
-    flex-wrap: wrap;
-  }
+  .item-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); flex-wrap: wrap; }
   .item-row:first-child { border-top: none; }
   .item-row .itxt { flex: 1 1 220px; min-width: 180px; font-size: 13px; }
   .item-row .itxt .en { font-weight: 500; }
   .item-row .itxt .th { color: var(--steel); font-size: 12px; }
   .item-row .itog { display: inline-flex; border: 1px solid var(--line-strong); border-radius: var(--radius-s); overflow: hidden; flex: none; }
-  .item-row .itog button {
-    border: none; background: var(--surface); padding: 6px 10px;
-    font-size: 12px; font-weight: 700; cursor: pointer; border-right: 1px solid var(--line-strong);
-    color: var(--ink-soft);
-  }
+  .item-row .itog button { border: none; background: var(--surface); padding: 6px 10px; font-size: 12px; font-weight: 700; cursor: pointer; border-right: 1px solid var(--line-strong); color: var(--ink-soft); }
   .item-row .itog button:last-child { border-right: none; }
   .item-row .itog button.sel-S { background: var(--green); color: #fff; }
   .item-row .itog button.sel-U { background: var(--red); color: #fff; }
   .item-row .itog button.sel-NA { background: var(--steel); color: #fff; }
-  .item-row .itog button.sel-B { background: var(--steel); color: #fff; }
   .item-row .icmt { flex: 1 1 180px; min-width: 140px; }
   .item-row .icmt input { padding: 6px 8px; font-size: 12.5px; }
 
@@ -458,95 +240,30 @@
   .apn-table tr + tr td { border-top: 1px solid var(--line); }
   .apn-table input, .apn-table select { font-size: 12.5px; padding: 6px 8px; }
   .apn-meta { font-size: 10.5px; color: var(--steel); margin-top: 3px; }
-
-  .formfoot {
-    position: sticky; bottom: 0;
-    background: linear-gradient(to top, var(--paper) 70%, transparent);
-    padding: 16px 0 4px; margin-top: 12px;
-    display: flex; justify-content: flex-end; gap: 10px;
-  }
+  .formfoot { position: sticky; bottom: 0; background: linear-gradient(to top, var(--paper) 70%, transparent); padding: 16px 0 4px; margin-top: 12px; display: flex; justify-content: flex-end; gap: 10px; }
 
   /* ---------- Tracker table ---------- */
   .tracktable { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .tracktable th {
-    text-align: left; font-size: 11px; color: var(--steel); font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.04em;
-    padding: 8px; border-bottom: 1px solid var(--line-strong);
-  }
+  .tracktable th { text-align: left; font-size: 11px; color: var(--steel); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 8px; border-bottom: 1px solid var(--line-strong); }
   .tracktable td { padding: 9px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
   .tracktable tr:hover td { background: var(--surface-2); }
 
-  /* ---------- Departments ---------- */
-  .deptlist { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
-  .deptrow {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-s);
-    background: var(--surface);
-  }
-  .deptrow .nm { font-weight: 600; font-size: 13.5px; }
-  .deptrow .nmth { color: var(--steel); font-size: 12px; margin-left: 6px; }
-
-  #loading-screen {
-    min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 10px; color: var(--steel); font-size: 13px;
-  }
-  .spinner {
-    width: 26px; height: 26px; border-radius: 50%;
-    border: 3px solid var(--line); border-top-color: var(--amber);
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .backlink { display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--steel); background:none; border:none; cursor:pointer; padding:4px 0; margin-bottom:10px; }
-
-  /* ---------- Reminder banner ---------- */
-  #reminderbar {
-    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-    background: var(--amber-bg); color: var(--amber-ink);
-    padding: 9px 16px; font-size: 12.5px; font-weight: 600;
-    border-bottom: 1px solid var(--line);
-  }
-  #reminderbar.overdue { background: var(--red-bg); color: var(--red); }
-  #reminderbar button { background: none; border: none; color: inherit; font-weight: 700; cursor: pointer; text-decoration: underline; padding: 0; }
-  #reminderbar .rb-x { margin-left: auto; background:none; border:none; cursor:pointer; color: inherit; font-size: 15px; text-decoration:none; }
-
   /* ---------- Reports ---------- */
-  .kpirow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
-  @media (max-width: 720px) { .kpirow { grid-template-columns: repeat(2, 1fr); } }
-  .kpi {
-    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-m);
-    padding: 14px 16px;
-  }
+  .kpirow { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:16px 0; }
+  @media (max-width:640px) { .kpirow { grid-template-columns:repeat(2,1fr); } }
+  .kpi { background: var(--surface); border:1px solid var(--line); border-radius: var(--radius-m); padding:14px 16px; }
   .kpi .kv { font-family: var(--font-head); font-size: 26px; font-weight: 700; line-height: 1; }
   .kpi .kl { font-size: 11.5px; color: var(--steel); margin-top: 4px; }
   .kpi.safe .kv { color: var(--green); }
   .kpi.unsafe .kv { color: var(--red); }
   .kpi.barrier .kv { color: var(--steel); }
   .kpi.total .kv { color: var(--blue); }
-
-  .chartgrid { display: grid; grid-template-columns: 1.1fr 1.4fr; gap: 16px; margin-bottom: 18px; }
-  @media (max-width: 860px) { .chartgrid { grid-template-columns: 1fr; } }
+  .chartgrid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+  @media (max-width:860px) { .chartgrid { grid-template-columns:1fr; } }
   .chartcard { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-m); padding: 16px; }
   .chartcard h3 { font-size: 13.5px; margin-bottom: 12px; }
-  .chartcard .chartwrap { position: relative; height: 240px; }
+  .chartcard .chartwrap { position: relative; min-height: 240px; }
 
-  .rankrow { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-top: 1px solid var(--line); font-size: 12.5px; }
-  .rankrow:first-child { border-top: none; }
-  .rankrow .rn { width: 20px; flex: none; font-family: var(--font-head); font-weight: 700; color: var(--steel); }
-  .rankrow .rt { flex: 1; min-width: 0; }
-  .rankrow .rt .en { font-weight: 600; }
-  .rankrow .rt .cat { font-size: 11px; color: var(--steel); }
-  .rankrow .rc { flex: none; font-family: var(--font-head); font-weight: 700; color: var(--red); font-size: 15px; }
-  .rankrow .rbar { height: 5px; border-radius: 3px; background: var(--red); margin-top: 3px; }
-
-  /* ---------- Auth ---------- */
-  .authtabs { display:flex; border:1px solid var(--line-strong); border-radius: var(--radius-s); overflow:hidden; margin-bottom:18px; }
-  .authtabs button { flex:1; border:none; background: var(--surface); color: var(--ink-soft); padding:9px; font-weight:600; font-size:13.5px; cursor:pointer; }
-  .authtabs button.active { background: var(--ink); color:#F5F1E6; }
-  .orline { display:flex; align-items:center; gap:10px; margin:14px 0; color: var(--steel); font-size:12px; }
-  .orline::before, .orline::after { content:""; flex:1; height:1px; background: var(--line); }
-
-  /* ---------- CSS charts ---------- */
   .donutbox { display:flex; align-items:center; justify-content:center; gap:26px; flex-wrap:wrap; height:100%; }
   .donut { width:170px; height:170px; border-radius:50%; display:grid; place-items:center; flex:none; }
   .donut-hole { width:62%; height:62%; border-radius:50%; background: var(--surface); display:flex; flex-direction:column; align-items:center; justify-content:center; }
@@ -570,27 +287,40 @@
   .hfill { height:100%; background: var(--red); border-radius:4px; }
   .hval { font-family: var(--font-head); font-weight:700; text-align:right; }
   @media (max-width:640px) { .hrow { grid-template-columns: 1fr 34px; } .hlab { grid-column: 1 / -1; } .htrack { grid-column: 1; } }
+
+  .subrow { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-top:1px solid var(--line); }
+  .subrow:first-child { border-top:none; }
+  .subrow .snm { font-size:13px; font-weight:600; }
+  .subrow .sdp { font-size:11px; color: var(--steel); }
+  .subcount { font-family: var(--font-head); font-weight:700; font-size:15px; color: var(--blue); min-width:26px; text-align:right; }
+  .sublist { max-height:260px; overflow-y:auto; }
+
+  .reptable-wrap { overflow-x:auto; }
+  .reptable { width:100%; border-collapse:collapse; font-size:12.8px; }
+  .reptable th { text-align:left; font-size:10.5px; color: var(--steel); font-weight:700; text-transform:uppercase; letter-spacing:.04em; padding:7px 8px; border-bottom:1px solid var(--line-strong); white-space:nowrap; }
+  .reptable td { padding:8px; border-bottom:1px solid var(--line); vertical-align:middle; }
+  .reptable tr:hover td { background: var(--surface-2); }
+
+  /* ---------- Departments ---------- */
+  .deptlist { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+  .deptrow { display: flex; align-items: center; justify-content: space-between; gap:10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-s); background: var(--surface); }
+  .deptrow .nm { font-weight: 600; font-size: 13.5px; }
+  .deptrow .nmth { color: var(--steel); font-size: 12px; margin-left: 6px; }
+  .deptrow .dactions { display:flex; gap:6px; flex:none; }
+  .deptrow input.renameinput { padding:5px 8px; font-size:12.5px; }
+
+  #loading-screen { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--steel); font-size: 13px; }
+  .spinner { width: 26px; height: 26px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--amber); animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .backlink { display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--steel); background:none; border:none; cursor:pointer; padding:4px 0; margin-bottom:10px; }
 </style>
 </head>
 <body>
-
 <div id="app">
-  <div id="loading-screen">
-    <div class="spinner"></div>
-    <div>กำลังโหลด… / Loading…</div>
-  </div>
+  <div id="loading-screen"><div class="spinner"></div><div>กำลังโหลด… / Loading…</div></div>
 </div>
-
 <div class="toast" id="toast"></div>
 
-<!-- Firebase (compat SDK: works on GitHub Pages with no build step) -->
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<!-- Your Firebase project settings live in this file -->
-<script src="firebase-config.js"></script>
-<!-- Excel export -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 (function () {
 "use strict";
@@ -700,12 +430,9 @@ const CATS = [
     ["Entry/Exit Points Secure","จุดเข้า-ออกปลอดภัย"]]]
 ];
 
-// Flatten into a single item list with sequential numbers, keeping category info
 const ITEMS = [];
 CATS.forEach((cat, ci) => {
-  cat[2].forEach(it => {
-    ITEMS.push({ no: ITEMS.length + 1, catIndex: ci, en: it[0], th: it[1] });
-  });
+  cat[2].forEach(it => { ITEMS.push({ no: ITEMS.length + 1, catIndex: ci, en: it[0], th: it[1] }); });
 });
 
 /* ============================================================
@@ -714,60 +441,43 @@ CATS.forEach((cat, ci) => {
 let capabilitiesReady = false;
 
 const S = {
-  view: "loading",           // loading | login | dashboard | form | tracker | departments
-  session: null,              // { name, department, localOnly }
+  view: "loading",
+  session: null,              // { name, department, uid, email }
   departments: [],            // [{id, name, nameTh}]
-  observations: [],           // live list for dashboard
-  obsUnsub: null,
-  deptUnsub: null,
-  editingObs: null,           // observation object being created/edited
-  openCats: new Set(),        // expanded category indices in the form
+  observations: [],
+  editingObs: null,
+  openCats: new Set(),
   dashFilterDept: "",
-  dashFilterStatus: "open",   // open | closed | all
+  dashFilterStatus: "open",
   trackFilterStatus: "all",
   trackFilterDept: "",
   navOpen: false,
   reminderDismissed: false,
-  user: null,                 // Firebase auth user
-  authReady: false,           // first auth callback received
-  authMode: "signin",         // signin | register
-  authBusy: false,
-  reportsMonth: new Date().toISOString().slice(0, 7), // "YYYY-MM"
+  reportsMonth: new Date().toISOString().slice(0, 7),
   reportsAllTime: false,
   reportsDept: "",
+  reportsArea: "",
+  user: null,
+  authReady: false,
+  authMode: "signin",
+  pendingName: null,
+  pendingDept: null,
 };
 
 const root = document.getElementById("app");
 const toastEl = document.getElementById("toast");
-function toast(msg) {
-  toastEl.textContent = msg;
-  toastEl.classList.add("show");
-  clearTimeout(toast._t);
-  toast._t = setTimeout(() => toastEl.classList.remove("show"), 2600);
-}
-function esc(s) {
-  return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-  }[c]));
-}
+function toast(msg) { toastEl.textContent = msg; toastEl.classList.add("show"); clearTimeout(toast._t); toast._t = setTimeout(() => toastEl.classList.remove("show"), 2600); }
+function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
 function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
 function todayISO() { return new Date().toISOString().slice(0, 10); }
-function nowTimeStr() {
-  const d = new Date();
-  return String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
-}
-function fmtDate(iso) {
-  if (!iso) return "-";
-  const d = new Date(iso + "T00:00:00");
-  if (isNaN(d)) return iso;
-  return d.toLocaleDateString("th-TH", { year: "numeric", month: "short", day: "numeric" });
-}
-function fmtDateTime(iso) {
-  if (!iso) return "-";
-  const d = new Date(iso);
-  if (isNaN(d)) return iso;
-  return d.toLocaleDateString("th-TH", { day: "2-digit", month: "short" }) + " " +
-         d.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
+function nowTimeStr() { const d = new Date(); return String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0"); }
+function fmtDate(iso) { if (!iso) return "-"; const d = new Date(iso + "T00:00:00"); if (isNaN(d)) return iso; return d.toLocaleDateString("th-TH", { year: "numeric", month: "short", day: "numeric" }); }
+function fmtDateTime(iso) { if (!iso) return "-"; const d = new Date(iso); if (isNaN(d)) return iso; return d.toLocaleDateString("th-TH", { day: "2-digit", month: "short" }) + " " + d.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" }); }
+
+function isAdmin() {
+  if (!S.user || !S.user.email) return false;
+  const list = (window.ADMIN_EMAILS || []).map(e => String(e).toLowerCase().trim());
+  return list.includes(String(S.user.email).toLowerCase().trim());
 }
 
 /* ============================================================
@@ -804,12 +514,12 @@ function fbErr(e) {
     "auth/popup-closed-by-user": "ปิดหน้าต่างล็อกอินก่อนเสร็จสิ้น",
     "auth/unauthorized-domain": "โดเมนนี้ยังไม่ได้เพิ่มใน Firebase > Authentication > Authorized domains",
     "auth/operation-not-allowed": "ยังไม่ได้เปิดวิธีล็อกอินนี้ใน Firebase Console",
-    "permission-denied": "ไม่มีสิทธิ์ (ตรวจสอบ Firestore Rules)",
+    "permission-denied": "ไม่มีสิทธิ์ทำรายการนี้ (ตรวจสอบ Firestore Rules หรือสิทธิ์แอดมิน)",
   };
   return map[c] || (e && e.message) || String(e);
 }
 
-/* ---------- Departments (readable by everyone, addable by signed-in users) ---------- */
+/* ---------- Departments: everyone reads, only admins write ---------- */
 function subscribeDepartments() {
   if (!fbDb) return;
   if (unsubDept) unsubDept();
@@ -824,59 +534,121 @@ function subscribeDepartments() {
 }
 
 async function addDepartment(nameEn, nameTh) {
-  nameEn = (nameEn || "").trim();
-  nameTh = (nameTh || "").trim();
+  nameEn = (nameEn || "").trim(); nameTh = (nameTh || "").trim();
   if (!nameEn && !nameTh) return;
-  if (!S.user) { toast("กรุณาเข้าสู่ระบบก่อนเพิ่มแผนก"); return; }
+  if (!isAdmin()) { toast("เฉพาะแอดมินเท่านั้นที่เพิ่มแผนกได้"); return; }
   const name = nameEn || nameTh;
-  if (S.departments.some(d => (d.name || "").toLowerCase() === name.toLowerCase())) {
-    toast("มีแผนกนี้อยู่แล้ว"); return;
-  }
+  if (S.departments.some(d => (d.name || "").toLowerCase() === name.toLowerCase())) { toast("มีแผนกนี้อยู่แล้ว"); return; }
   try {
-    await fbDb.collection("departments").add({
-      name, nameTh, createdAt: new Date().toISOString(), createdBy: S.user.uid
-    });
+    await fbDb.collection("departments").add({ name, nameTh, createdAt: new Date().toISOString(), createdBy: S.user.uid });
     toast("เพิ่มแผนกแล้ว / Department added");
   } catch (e) { toast("เพิ่มแผนกไม่สำเร็จ: " + fbErr(e)); }
 }
 
-/* ---------- Observations (signed-in users only) ---------- */
+async function renameDepartment(id, nameEn, nameTh) {
+  if (!isAdmin()) { toast("เฉพาะแอดมินเท่านั้นที่แก้ไขได้"); return; }
+  try {
+    await fbDb.collection("departments").doc(id).update({ name: nameEn || nameTh, nameTh: nameTh || "" });
+    toast("แก้ไขแผนกแล้ว");
+  } catch (e) { toast("แก้ไขไม่สำเร็จ: " + fbErr(e)); }
+}
+
+async function deleteDepartment(id) {
+  if (!isAdmin()) { toast("เฉพาะแอดมินเท่านั้นที่ลบได้"); return; }
+  try { await fbDb.collection("departments").doc(id).delete(); toast("ลบแผนกแล้ว"); }
+  catch (e) { toast("ลบไม่สำเร็จ: " + fbErr(e)); }
+}
+
+/* ---------- Observations (signed-in users) ---------- */
 function subscribeObservations() {
   if (!fbDb || !S.user) return;
   if (unsubObs) unsubObs();
   unsubObs = fbDb.collection("observations").orderBy("createdAt", "desc").limit(1000).onSnapshot(
-    snap => {
-      S.observations = snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }));
-      render();
-    },
+    snap => { S.observations = snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) })); render(); },
     err => { console.warn("observations listener:", err); toast("โหลดข้อมูลไม่สำเร็จ: " + fbErr(err)); }
   );
 }
 
-/* ---------- Auth ---------- */
-async function loadProfile(user) {
-  try {
-    const snap = await fbDb.collection("users").doc(user.uid).get();
-    return snap.exists ? snap.data() : null;
-  } catch (e) { console.warn("profile load", e); return null; }
+function computeTotals(checklist) {
+  let safe = 0, unsafe = 0, na = 0;
+  ITEMS.forEach(it => {
+    const v = checklist && checklist[it.no];
+    if (!v || !v.status) return;
+    if (v.status === "S") safe++;
+    else if (v.status === "U") unsafe++;
+    else if (v.status === "NA" || v.status === "B") na++;
+  });
+  return { safe, unsafe, na };
 }
 
+function newObservationDraft() {
+  const checklist = {};
+  ITEMS.forEach(it => { checklist[it.no] = { status: "", comment: "" }; });
+  return {
+    id: null, date: todayISO(), time: nowTimeStr(),
+    department: S.session ? S.session.department : "",
+    area: "", taskObserved: "",
+    observerName: S.session ? S.session.name : "",
+    personObserved: "", obsType: "individual", numObserved: "",
+    checklist, overallComments: "", coached: "", followUpDueDate: "",
+    actionPlan: [], createdAt: null, createdByName: S.session ? S.session.name : "", updatedAt: null,
+  };
+}
+
+async function saveObservation(obs) {
+  const totals = computeTotals(obs.checklist);
+  const now = new Date().toISOString();
+  const isNew = !obs.id;
+  const payload = { ...obs, totals, updatedAt: now, updatedBy: S.user.uid, updatedByName: S.session.name };
+  const id = payload.id;
+  delete payload.id;
+  if (isNew) { payload.createdAt = now; payload.createdBy = S.user.uid; payload.createdByName = S.session.name; }
+  const clean = JSON.parse(JSON.stringify(payload));
+  try {
+    if (isNew) {
+      const ref = await fbDb.collection("observations").add(clean);
+      toast("บันทึกการสังเกตแล้ว / Observation saved");
+      return ref.id;
+    }
+    await fbDb.collection("observations").doc(id).set(clean, { merge: true });
+    toast("บันทึกการเปลี่ยนแปลงแล้ว / Changes saved");
+    return id;
+  } catch (e) { toast("บันทึกไม่สำเร็จ: " + fbErr(e)); throw e; }
+}
+
+async function updateActionItemInObs(obsId, actionId, patch) {
+  const who = S.session ? S.session.name : "ไม่ทราบชื่อ";
+  const stamp = new Date().toISOString();
+  const ref = fbDb.collection("observations").doc(obsId);
+  try {
+    await fbDb.runTransaction(async tx => {
+      const snap = await tx.get(ref);
+      if (!snap.exists) return;
+      const ap = (snap.data().actionPlan || []).map(a => a.id === actionId
+        ? { ...a, ...patch, updatedByName: who, updatedBy: S.user.uid, updatedAt: stamp } : a);
+      tx.update(ref, { actionPlan: ap, updatedAt: stamp });
+    });
+  } catch (e) { toast("อัปเดตไม่สำเร็จ: " + fbErr(e)); }
+}
+
+/* ---------- Auth / profile ---------- */
+async function loadProfile(user) {
+  try { const snap = await fbDb.collection("users").doc(user.uid).get(); return snap.exists ? snap.data() : null; }
+  catch (e) { console.warn("profile load", e); return null; }
+}
 async function saveProfile(name, department) {
   const u = S.user;
   const data = { name, department, email: u.email || "", updatedAt: new Date().toISOString() };
   await fbDb.collection("users").doc(u.uid).set(data, { merge: true });
   S.session = { name, department, uid: u.uid, email: u.email || "" };
 }
-
 function startAuthListener() {
   if (!fbAuth) { S.authReady = true; render(); return; }
   fbAuth.onAuthStateChanged(async user => {
     if (unsubObs) { unsubObs(); unsubObs = null; }
     S.user = user || null;
     S.observations = [];
-    if (!user) {
-      S.session = null; S.view = "login"; S.authReady = true; render(); return;
-    }
+    if (!user) { S.session = null; S.view = "login"; S.authReady = true; render(); return; }
     const prof = await loadProfile(user);
     if (prof && prof.name && prof.department) {
       S.session = { name: prof.name, department: prof.department, uid: user.uid, email: user.email || "" };
@@ -890,118 +662,44 @@ function startAuthListener() {
   });
 }
 
-function computeTotals(checklist) {
-  let safe = 0, unsafe = 0, na = 0;
-  ITEMS.forEach(it => {
-    const v = checklist && checklist[it.no];
-    if (!v || !v.status) return;
-    if (v.status === "S") safe++;
-    else if (v.status === "U") unsafe++;
-    else if (v.status === "NA") na++;
-  });
-  return { safe, unsafe, na };
-}
-
-function newObservationDraft() {
-  const checklist = {};
-  ITEMS.forEach(it => { checklist[it.no] = { status: "", comment: "" }; });
-  return {
-    id: null,
-    date: todayISO(),
-    time: nowTimeStr(),
-    department: S.session ? S.session.department : "",
-    area: "",
-    taskObserved: "",
-    observerName: S.session ? S.session.name : "",
-    personObserved: "",
-    obsType: "individual",
-    numObserved: "",
-    checklist,
-    overallComments: "",
-    coached: "",
-    followUpDueDate: "",
-    actionPlan: [],
-    createdAt: null,
-    createdByName: S.session ? S.session.name : "",
-    updatedAt: null,
-  };
-}
-
-async function saveObservation(obs) {
-  const totals = computeTotals(obs.checklist);
-  const now = new Date().toISOString();
-  const isNew = !obs.id;
-  const payload = { ...obs, totals, updatedAt: now, updatedBy: S.user.uid, updatedByName: S.session.name };
-  const id = payload.id;
-  delete payload.id;
-  if (isNew) {
-    payload.createdAt = now;
-    payload.createdBy = S.user.uid;
-    payload.createdByName = S.session.name;
-  }
-  const clean = JSON.parse(JSON.stringify(payload)); // strips undefined (Firestore rejects it)
-  try {
-    if (isNew) {
-      const ref = await fbDb.collection("observations").add(clean);
-      toast("บันทึกการสังเกตแล้ว / Observation saved");
-      return ref.id;
-    }
-    await fbDb.collection("observations").doc(id).set(clean, { merge: true });
-    toast("บันทึกการเปลี่ยนแปลงแล้ว / Changes saved");
-    return id;
-  } catch (e) {
-    toast("บันทึกไม่สำเร็จ: " + fbErr(e));
-    throw e;
-  }
-}
-
-async function updateActionItemInObs(obsId, actionId, patch) {
-  const who = S.session ? S.session.name : "ไม่ทราบชื่อ";
-  const stamp = new Date().toISOString();
-  const ref = fbDb.collection("observations").doc(obsId);
-  try {
-    await fbDb.runTransaction(async tx => {
-      const snap = await tx.get(ref);
-      if (!snap.exists) return;
-      const ap = (snap.data().actionPlan || []).map(a => a.id === actionId
-        ? { ...a, ...patch, updatedByName: who, updatedBy: S.user.uid, updatedAt: stamp }
-        : a);
-      tx.update(ref, { actionPlan: ap, updatedAt: stamp });
-    });
-  } catch (e) { toast("อัปเดตไม่สำเร็จ: " + fbErr(e)); }
-}
-
 /* ============================================================
    RENDER: SHELL
    ============================================================ */
-function initials(name) {
-  name = (name || "").trim();
-  if (!name) return "?";
-  const parts = name.split(/\s+/);
-  return (parts[0][0] || "") .toUpperCase();
+function initials(name) { name = (name || "").trim(); if (!name) return "?"; return (name.split(/\s+/)[0][0] || "").toUpperCase(); }
+
+function getReminderCounts() {
+  const today = todayISO();
+  const soon = new Date(); soon.setDate(soon.getDate() + 3);
+  const soonISO = soon.toISOString().slice(0, 10);
+  let overdue = 0, dueSoon = 0;
+  S.observations.forEach(o => (o.actionPlan || []).forEach(a => {
+    if (a.status === "done" || !a.dueDate) return;
+    if (a.dueDate < today) overdue++; else if (a.dueDate <= soonISO) dueSoon++;
+  }));
+  return { overdue, dueSoon };
 }
 
 function renderReminderBar() {
   if (S.reminderDismissed) return "";
   const { overdue, dueSoon } = getReminderCounts();
   if (!overdue && !dueSoon) return "";
-  const cls = overdue ? "overdue" : "";
-  const parts = [];
-  if (overdue) parts.push(`เกินกำหนด <b>${overdue}</b> รายการ`);
-  if (dueSoon) parts.push(`ใกล้ครบกำหนด (≤3 วัน) <b>${dueSoon}</b> รายการ`);
+  const amber = !overdue && dueSoon;
+  const msg = overdue
+    ? `⚠️ เกินกำหนด ${overdue} รายการ` + (dueSoon ? ` และใกล้ครบกำหนด ${dueSoon} รายการ` : "")
+    : `⏰ ใกล้ครบกำหนด ${dueSoon} รายการ (ภายใน 3 วัน)`;
   return `
-    <div id="reminderbar" class="${cls}">
-      <span>&#9888;&#65039; ${parts.join(" • ")}</span>
-      <button id="rb-goto">ไปที่หน้าติดตามแก้ไข</button>
-      <button class="rb-x" id="rb-close" aria-label="close">&times;</button>
-    </div>
-  `;
+    <div id="reminderbar" class="${amber ? "amberbar" : ""}">
+      <span>${msg}</span>
+      <button class="linklike" id="rb-goto">ไปที่หน้าติดตามแก้ไข</button>
+      <button class="rbx" id="rb-close">&times;</button>
+    </div>`;
 }
 
 function renderShell(innerHtml) {
   const dept = S.session ? esc(S.session.department || "-") : "";
   const name = S.session ? esc(S.session.name || "-") : "";
   const av = initials(S.session && S.session.name);
+  const admin = isAdmin();
 
   root.innerHTML = `
     <div id="topbar">
@@ -1009,18 +707,12 @@ function renderShell(innerHtml) {
         <button id="hamburger" aria-label="menu">&#9776;</button>
         <div class="brand">
           <div class="mark">BBS</div>
-          <div class="titles">
-            <div class="t1">BBS OBSERVATION</div>
-            <div class="t2">ระบบสังเกตพฤติกรรมความปลอดภัย</div>
-          </div>
+          <div class="titles"><div class="t1">BBS OBSERVATION</div><div class="t2">ระบบสังเกตพฤติกรรมความปลอดภัย</div></div>
         </div>
       </div>
       <button id="userchip">
         <div class="av">${av}</div>
-        <div class="meta">
-          <div class="nm">${name}</div>
-          <div class="dp">${dept}</div>
-        </div>
+        <div class="meta"><div class="nm">${name}${admin ? '<span class="adminbadge">ADMIN</span>' : ""}</div><div class="dp">${dept}</div></div>
       </button>
     </div>
     ${renderReminderBar()}
@@ -1037,16 +729,13 @@ function renderShell(innerHtml) {
         <div class="navfoot">${esc(S.session && S.session.email || "")}<br>ข้อมูลใช้ร่วมกันทุกคน (Firebase)</div>
       </nav>
       <main id="content"><div class="wrap">${innerHtml}</div></main>
-    </div>
-  `;
+    </div>`;
 
   document.querySelectorAll(".navitem[data-view]").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.view === S.view);
     btn.onclick = () => { S.navOpen = false; goto(btn.dataset.view); };
   });
-  document.getElementById("switchuser").onclick = () => {
-    if (fbAuth) fbAuth.signOut();
-  };
+  document.getElementById("switchuser").onclick = () => { if (fbAuth) fbAuth.signOut(); };
   document.getElementById("hamburger").onclick = () => {
     S.navOpen = !S.navOpen;
     document.getElementById("nav").classList.toggle("open", S.navOpen);
@@ -1065,14 +754,24 @@ function renderShell(innerHtml) {
   if (rbClose) rbClose.onclick = () => { S.reminderDismissed = true; render(); };
 }
 
-function goto(view) {
+function goto(view, obsToEdit) {
   S.view = view;
-  if (view === "form" && !S.editingObs) {
-    S.editingObs = newObservationDraft();
+  if (view === "form") {
+    if (obsToEdit) {
+      S.editingObs = JSON.parse(JSON.stringify(obsToEdit));
+      ITEMS.forEach(it => { if (!S.editingObs.checklist[it.no]) S.editingObs.checklist[it.no] = { status: "", comment: "" }; });
+    } else if (!S.editingObs) {
+      S.editingObs = newObservationDraft();
+    }
     S.openCats = new Set();
   }
   render();
   window.scrollTo(0, 0);
+}
+
+function openObsForEdit(obsId) {
+  const obs = S.observations.find(o => o.id === obsId);
+  if (obs) goto("form", obs);
 }
 
 /* ============================================================
@@ -1094,17 +793,14 @@ function renderLogin() {
   root.innerHTML = `
     <div id="loginwrap">
       <div class="logincard">
-        <div class="brandbar">
-          <div class="mark">BBS</div>
-          <div><h1 style="font-size:15px;">BBS OBSERVATION</h1><div class="sub" style="margin:0;">Behavior Based Safety</div></div>
-        </div>
+        <div class="brandbar"><div class="mark">BBS</div><div><h1 style="font-size:15px;">BBS OBSERVATION</h1><div class="sub" style="margin:0;">Behavior Based Safety</div></div></div>
         <div class="authtabs">
           <button data-mode="signin" class="${!reg ? "active" : ""}">เข้าสู่ระบบ</button>
           <button data-mode="register" class="${reg ? "active" : ""}">สมัครสมาชิก</button>
         </div>
         ${reg ? `<div class="field"><label class="field-label">ชื่อ-นามสกุล / Full name</label><input type="text" id="a_name" autocomplete="name"></div>` : ``}
         <div class="field"><label class="field-label">อีเมล / Email</label><input type="text" id="a_email" autocomplete="email" inputmode="email"></div>
-        <div class="field"><label class="field-label">รหัสผ่าน / Password</label><input type="password" id="a_pass" autocomplete="${reg ? "new-password" : "current-password"}" style="width:100%;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);border-radius:var(--radius-s);padding:8px 10px;"></div>
+        <div class="field"><label class="field-label">รหัสผ่าน / Password</label><input type="password" id="a_pass" autocomplete="${reg ? "new-password" : "current-password"}"></div>
         <button class="btn primary" id="a_go" style="width:100%;justify-content:center;padding:11px;">${reg ? "สมัครสมาชิก / Register" : "เข้าสู่ระบบ / Sign in"}</button>
         <div class="orline"><span>หรือ</span></div>
         <button class="btn" id="a_google" style="width:100%;justify-content:center;padding:10px;">ดำเนินการต่อด้วย Google</button>
@@ -1114,7 +810,6 @@ function renderLogin() {
 
   document.querySelectorAll(".authtabs button").forEach(b => b.onclick = () => { S.authMode = b.dataset.mode; renderLogin(); });
   const busy = on => { const g = document.getElementById("a_go"); if (g) g.disabled = on; };
-
   const go = async () => {
     const email = document.getElementById("a_email").value.trim();
     const pass = document.getElementById("a_pass").value;
@@ -1136,20 +831,19 @@ function renderLogin() {
   document.getElementById("a_go").onclick = go;
   document.getElementById("a_pass").addEventListener("keydown", e => { if (e.key === "Enter") go(); });
   document.getElementById("a_google").onclick = async () => {
-    try { await fbAuth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
-    catch (e) { toast(fbErr(e)); }
+    try { await fbAuth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); } catch (e) { toast(fbErr(e)); }
   };
   const fg = document.getElementById("a_forgot");
   if (fg) fg.onclick = async () => {
     const email = document.getElementById("a_email").value.trim();
-    if (!email) { toast("กรอกอีเมลก่อน แล้วกด \"ลืมรหัสผ่าน\""); return; }
-    try { await fbAuth.sendPasswordResetEmail(email); toast("ส่งลิงก์ตั้งรหัสผ่านใหม่ไปที่อีเมลแล้ว"); }
-    catch (e) { toast(fbErr(e)); }
+    if (!email) { toast('กรอกอีเมลก่อน แล้วกด "ลืมรหัสผ่าน"'); return; }
+    try { await fbAuth.sendPasswordResetEmail(email); toast("ส่งลิงก์ตั้งรหัสผ่านใหม่ไปที่อีเมลแล้ว"); } catch (e) { toast(fbErr(e)); }
   };
 }
 
 function renderProfile() {
   const u = S.user;
+  const admin = isAdmin();
   const curName = S.pendingName || (S.session && S.session.name) || (u && u.displayName) || "";
   const curDept = (S.session && S.session.department) || "";
   const deptOptions = S.departments.map(d =>
@@ -1164,48 +858,52 @@ function renderProfile() {
         <div class="field"><label class="field-label">ชื่อผู้สังเกตการณ์ / Observer name</label><input type="text" id="p_name" value="${esc(curName)}"></div>
         <div class="field">
           <label class="field-label">แผนก / Department</label>
-          <select id="p_dept">
-            <option value="">— เลือกแผนก / select —</option>
-            ${deptOptions}
-            <option value="__add__">+ เพิ่มแผนกใหม่ / Add new…</option>
-          </select>
-          <div class="adddept-row" id="addDeptRow" style="display:none;">
-            <input type="text" id="newDeptName" placeholder="Department (EN)">
-            <input type="text" id="newDeptNameTh" placeholder="แผนก (TH)">
-            <button class="btn small" id="confirmAddDept">เพิ่ม</button>
-          </div>
+          ${S.departments.length === 0 && !admin ? `
+            <div class="notice">ยังไม่มีรายชื่อแผนกในระบบ กรุณาติดต่อแอดมินให้เพิ่มแผนกก่อน</div>
+          ` : `
+            <select id="p_dept">
+              <option value="">— เลือกแผนก / select —</option>
+              ${deptOptions}
+              ${admin ? `<option value="__add__">+ เพิ่มแผนกใหม่ / Add new…</option>` : ``}
+            </select>
+            ${admin ? `
+            <div class="adddept-row" id="addDeptRow" style="display:none;">
+              <input type="text" id="newDeptName" placeholder="Department (EN)">
+              <input type="text" id="newDeptNameTh" placeholder="แผนก (TH)">
+              <button class="btn small" id="confirmAddDept">เพิ่ม</button>
+            </div>` : ``}
+          `}
         </div>
         <button class="btn primary" id="p_go" style="width:100%;justify-content:center;padding:11px;">บันทึกและเข้าใช้งาน</button>
         <div style="text-align:center;margin-top:10px;"><button class="btn ghost small" id="p_out">ออกจากระบบ</button></div>
       </div>
     </div>`;
-  const sel = document.getElementById("p_dept");
+
   document.getElementById("p_name").oninput = e => { S.pendingName = e.target.value; };
-  sel.onchange = () => { document.getElementById("addDeptRow").style.display = sel.value === "__add__" ? "flex" : "none"; };
-  document.getElementById("confirmAddDept").onclick = async () => {
-    const en = document.getElementById("newDeptName").value;
-    const th = document.getElementById("newDeptNameTh").value;
-    if (!en.trim() && !th.trim()) { toast("กรุณากรอกชื่อแผนก"); return; }
-    S.pendingDept = (en || th).trim();   // set BEFORE saving so the re-render can auto-select it
-    await addDepartment(en, th);
-  };
-  // after the departments list refreshes, auto-select the newly added one
-  if (S.pendingDept) {
-    const m = Array.from(sel.options).find(o => o.value === S.pendingDept);
-    if (m) { sel.value = S.pendingDept; S.pendingDept = null; }
+  const sel = document.getElementById("p_dept");
+  if (sel) {
+    sel.onchange = () => { const row = document.getElementById("addDeptRow"); if (row) row.style.display = sel.value === "__add__" ? "flex" : "none"; };
+    const ca = document.getElementById("confirmAddDept");
+    if (ca) ca.onclick = async () => {
+      const en = document.getElementById("newDeptName").value;
+      const th = document.getElementById("newDeptNameTh").value;
+      if (!en.trim() && !th.trim()) { toast("กรุณากรอกชื่อแผนก"); return; }
+      S.pendingDept = (en || th).trim();
+      await addDepartment(en, th);
+    };
+    if (S.pendingDept) {
+      const m = Array.from(sel.options).find(o => o.value === S.pendingDept);
+      if (m) { sel.value = S.pendingDept; S.pendingDept = null; }
+    }
   }
   document.getElementById("p_out").onclick = () => fbAuth.signOut();
   document.getElementById("p_go").onclick = async () => {
     const name = document.getElementById("p_name").value.trim();
-    const dept = sel.value;
+    const dept = sel ? sel.value : "";
     if (!name) { toast("กรุณากรอกชื่อ"); return; }
     if (!dept || dept === "__add__") { toast("กรุณาเลือกแผนก"); return; }
-    try {
-      await saveProfile(name, dept);
-      S.pendingName = null;
-      S.view = "dashboard";
-      render();
-    } catch (e) { toast("บันทึกไม่สำเร็จ: " + fbErr(e)); }
+    try { await saveProfile(name, dept); S.pendingName = null; S.view = "dashboard"; render(); }
+    catch (e) { toast("บันทึกไม่สำเร็จ: " + fbErr(e)); }
   };
 }
 
@@ -1220,9 +918,9 @@ function renderDashboard() {
   let list = S.observations.slice();
   if (S.dashFilterDept) list = list.filter(o => o.department === S.dashFilterDept);
   list = list.filter(o => {
-    const isClosed = isObsClosed(o);
-    if (S.dashFilterStatus === "open") return !isClosed;
-    if (S.dashFilterStatus === "closed") return isClosed;
+    const closed = isObsClosed(o);
+    if (S.dashFilterStatus === "open") return !closed;
+    if (S.dashFilterStatus === "closed") return closed;
     return true;
   });
 
@@ -1232,11 +930,12 @@ function renderDashboard() {
     const openActions = (o.actionPlan || []).filter(a => a.status !== "done").length;
     return `
       <div class="obscard status-${closed ? "closed" : "open"}" data-id="${esc(o.id)}">
-        <div class="main">
+        <div class="main" data-open="${esc(o.id)}">
           <div class="row1">
             <span class="title">${esc(o.area || o.taskObserved || "ไม่มีชื่อพื้นที่")}</span>
             <span class="pill ${closed ? "green" : "amber"}">${closed ? "ปิดงานแล้ว" : "เปิดอยู่"}</span>
             ${o.department ? `<span class="pill blue">${esc(o.department)}</span>` : ``}
+            ${o.area ? `<span class="pill grey">📍 ${esc(o.area)}</span>` : ``}
           </div>
           <div class="meta">${fmtDate(o.date)} • ผู้สังเกต: ${esc(o.observerName || "-")}${o.taskObserved ? " • " + esc(o.taskObserved) : ""}</div>
         </div>
@@ -1245,19 +944,15 @@ function renderDashboard() {
           <div class="stat"><b style="color:var(--red)">${t.unsafe}</b><span>Unsafe</span></div>
           <div class="stat"><b style="color:${openActions ? "var(--amber-ink)" : "var(--steel)"}">${openActions}</b><span>Actions</span></div>
         </div>
-      </div>
-    `;
+        <button class="btn small editbtn" data-edit="${esc(o.id)}">แก้ไข</button>
+      </div>`;
   }).join("");
 
   renderShell(`
     <h2 style="margin-bottom:4px;">ภาพรวมการสังเกต</h2>
     <div style="color:var(--steel);font-size:13px;margin-bottom:16px;">Dashboard — all observations shared across your organization</div>
-
     <div class="toolbar">
-      <select id="fDept" style="min-width:160px;">
-        <option value="">ทุกแผนก / All depts</option>
-        ${deptOptions}
-      </select>
+      <select id="fDept" style="min-width:160px;"><option value="">ทุกแผนก / All depts</option>${deptOptions}</select>
       <div class="seg" id="fStatus">
         <button data-v="open" class="${S.dashFilterStatus==='open'?'active':''}">เปิดอยู่</button>
         <button data-v="closed" class="${S.dashFilterStatus==='closed'?'active':''}">ปิดแล้ว</button>
@@ -1266,65 +961,19 @@ function renderDashboard() {
       <div class="spacer"></div>
       <button class="btn amber" id="newObsBtn">+ สังเกตใหม่ / New Observation</button>
     </div>
-
     ${cards ? `<div class="obslist">${cards}</div>` : `
-      <div class="empty">
-        <div class="big">&#128203;</div>
-        <div>ยังไม่มีรายการสังเกต ลองเริ่มรายการแรกของคุณ</div>
-        <div style="font-size:12px;">No observations yet — start your first one.</div>
-      </div>
+      <div class="empty"><div class="big">&#128203;</div><div>ยังไม่มีรายการสังเกต ลองเริ่มรายการแรกของคุณ</div><div style="font-size:12px;">No observations yet — start your first one.</div></div>
     `}
   `);
 
   document.getElementById("fDept").onchange = e => { S.dashFilterDept = e.target.value; render(); };
-  document.querySelectorAll("#fStatus button").forEach(b => {
-    b.onclick = () => { S.dashFilterStatus = b.dataset.v; render(); };
-  });
+  document.querySelectorAll("#fStatus button").forEach(b => b.onclick = () => { S.dashFilterStatus = b.dataset.v; render(); });
   document.getElementById("newObsBtn").onclick = () => { S.editingObs = null; goto("form"); };
-  document.querySelectorAll(".obscard").forEach(c => {
-    c.onclick = () => {
-      const obs = S.observations.find(o => o.id === c.dataset.id);
-      if (obs) {
-        S.editingObs = JSON.parse(JSON.stringify(obs));
-        // backfill any missing checklist entries (schema safety)
-        ITEMS.forEach(it => { if (!S.editingObs.checklist[it.no]) S.editingObs.checklist[it.no] = { status: "", comment: "" }; });
-        S.openCats = new Set();
-        goto("form");
-      }
-    };
-  });
+  document.querySelectorAll("[data-open]").forEach(c => c.onclick = () => openObsForEdit(c.dataset.open));
+  document.querySelectorAll("[data-edit]").forEach(b => b.onclick = e => { e.stopPropagation(); openObsForEdit(b.dataset.edit); });
 }
 
-function isObsClosed(o) {
-  const ap = o.actionPlan || [];
-  if (ap.length === 0) return true;
-  return ap.every(a => a.status === "done");
-}
-
-// Shared action-item status classifier: done | overdue | due_soon | in_progress | open
-function actionStatusOf(a) {
-  const today = todayISO();
-  if (a.status === "done") return "done";
-  if (a.dueDate && a.dueDate < today) return "overdue";
-  if (a.dueDate) {
-    const soon = new Date(today);
-    soon.setDate(soon.getDate() + 3);
-    if (a.dueDate <= soon.toISOString().slice(0, 10)) return "due_soon";
-  }
-  return a.status === "in_progress" ? "in_progress" : "open";
-}
-
-function getReminderCounts() {
-  let overdue = 0, dueSoon = 0;
-  S.observations.forEach(o => {
-    (o.actionPlan || []).forEach(a => {
-      const st = actionStatusOf(a);
-      if (st === "overdue") overdue++;
-      else if (st === "due_soon") dueSoon++;
-    });
-  });
-  return { overdue, dueSoon };
-}
+function isObsClosed(o) { const ap = o.actionPlan || []; if (ap.length === 0) return true; return ap.every(a => a.status === "done"); }
 
 /* ============================================================
    RENDER: OBSERVATION FORM
@@ -1343,38 +992,30 @@ function renderForm() {
     const isOpen = S.openCats.has(ci);
     const rows = items.map(it => {
       const cur = obs.checklist[it.no] || { status: "", comment: "" };
+      const normStatus = cur.status === "B" ? "NA" : cur.status;
       const seg = ["S", "U", "NA"].map(v => {
         const label = v === "NA" ? "B" : v;
-        const title = v === "S" ? "Safe / ปลอดภัย" : v === "U" ? "Unsafe / ไม่ปลอดภัย" : "Barriers / ข้อจำกัด";
-        return `<button type="button" title="${title}" class="${cur.status === v ? "sel-" + v : ""}" data-item="${it.no}" data-val="${v}">${label}</button>`;
+        return `<button type="button" class="${normStatus === v ? "sel-" + v : ""}" data-item="${it.no}" data-val="${v}">${label}</button>`;
       }).join("");
       return `
         <div class="item-row">
           <div class="itxt"><span class="en">${it.no}. ${esc(it.en)}</span><br><span class="th">${esc(it.th)}</span></div>
           <div class="itog">${seg}</div>
           <div class="icmt"><input type="text" placeholder="หมายเหตุ / note" data-comment="${it.no}" value="${esc(cur.comment || "")}"></div>
-        </div>
-      `;
+        </div>`;
     }).join("");
     return `
       <div class="category ${isOpen ? "open" : ""}" data-cat="${ci}">
         <div class="cathead" data-cattoggle="${ci}">
           <span class="chv">&#9656;</span>
-          <div class="names">
-            <div class="n1">${ci + 1}. ${esc(cat[0])}</div>
-            <div class="n2">${esc(cat[1])}</div>
-          </div>
-          <div class="badges">
-            ${unsafeCount ? `<span class="pill red">${unsafeCount} unsafe</span>` : ``}
-            <span class="pill grey">${filledCount}/${items.length}</span>
-          </div>
+          <div class="names"><div class="n1">${ci + 1}. ${esc(cat[0])}</div><div class="n2">${esc(cat[1])}</div></div>
+          <div class="badges">${unsafeCount ? `<span class="pill red">${unsafeCount} unsafe</span>` : ``}<span class="pill grey">${filledCount}/${items.length}</span></div>
         </div>
         <div class="catbody">${rows}</div>
-      </div>
-    `;
+      </div>`;
   }).join("");
 
-  const apRows = (obs.actionPlan || []).map((a, idx) => `
+  const apRows = (obs.actionPlan || []).map(a => `
     <tr data-ap="${a.id}">
       <td><input type="text" data-apf="action" value="${esc(a.action || "")}" placeholder="มาตรการแก้ไข / Corrective action"></td>
       <td style="width:150px;"><input type="text" data-apf="responsible" value="${esc(a.responsible || "")}" placeholder="ผู้รับผิดชอบ"></td>
@@ -1388,8 +1029,7 @@ function renderForm() {
         ${a.updatedByName ? `<div class="apn-meta">โดย ${esc(a.updatedByName)}${a.updatedAt ? " • " + fmtDateTime(a.updatedAt) : ""}</div>` : ``}
       </td>
       <td style="width:34px;"><button type="button" class="btn small danger" data-apdel="${a.id}">&times;</button></td>
-    </tr>
-  `).join("");
+    </tr>`).join("");
 
   renderShell(`
     <button class="backlink" id="backToDash">&larr; กลับ / Back</button>
@@ -1401,11 +1041,8 @@ function renderForm() {
       <div class="formgrid">
         <div><label class="field-label">วันที่ / Date</label><input type="date" id="f_date" value="${esc(obs.date)}"></div>
         <div><label class="field-label">เวลา / Time</label><input type="text" id="f_time" value="${esc(obs.time)}"></div>
-        <div>
-          <label class="field-label">แผนก / Department</label>
-          <select id="f_dept"><option value="">— เลือก —</option>${deptOptions}</select>
-        </div>
-        <div><label class="field-label">พื้นที่ / Area</label><input type="text" id="f_area" value="${esc(obs.area)}" placeholder="เช่น Line 2, Warehouse A"></div>
+        <div><label class="field-label">แผนก / Department</label><select id="f_dept"><option value="">— เลือก —</option>${deptOptions}</select></div>
+        <div><label class="field-label">พื้นที่ที่พบ / Area</label><input type="text" id="f_area" value="${esc(obs.area)}" placeholder="เช่น Line 2, Warehouse A"></div>
         <div><label class="field-label">งานที่สังเกต / Task observed</label><input type="text" id="f_task" value="${esc(obs.taskObserved)}"></div>
         <div><label class="field-label">ผู้ถูกสังเกต / Person observed</label><input type="text" id="f_person" value="${esc(obs.personObserved)}"></div>
         <div><label class="field-label">ผู้สังเกตการณ์ / Observer</label><input type="text" id="f_observer" value="${esc(obs.observerName)}"></div>
@@ -1425,9 +1062,7 @@ function renderForm() {
       <div class="tchip na"><b id="tot_na">${totals.na}</b><span>Barriers (B) / ข้อจำกัด</span></div>
     </div>
 
-    <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;">
-      <span>รายการตรวจ 90 ข้อ / Checklist</span>
-    </div>
+    <div class="section-title">รายการตรวจ 90 ข้อ / Checklist</div>
     <div class="accordion-controls">
       <button class="btn small" id="expandAll">ขยายทั้งหมด</button>
       <button class="btn small" id="collapseAll">ย่อทั้งหมด</button>
@@ -1446,23 +1081,14 @@ function renderForm() {
             <option value="no" ${obs.coached === "no" ? "selected" : ""}>ไม่ใช่ / No</option>
           </select>
         </div>
-        <div>
-          <label class="field-label">วันครบกำหนดติดตามผล / Follow-up due</label>
-          <input type="date" id="f_followup" value="${esc(obs.followUpDueDate)}">
-        </div>
+        <div><label class="field-label">วันครบกำหนดติดตามผล / Follow-up due</label><input type="date" id="f_followup" value="${esc(obs.followUpDueDate)}"></div>
       </div>
     </div>
 
     <div class="section-title">แผนการดำเนินการแก้ไข / Action Plan</div>
     <div class="card">
       <table class="apn-table">
-        <thead><tr>
-          <th>มาตรการแก้ไข / Corrective Action</th>
-          <th>ผู้รับผิดชอบ</th>
-          <th>วันที่แล้วเสร็จ</th>
-          <th>สถานะ</th>
-          <th></th>
-        </tr></thead>
+        <thead><tr><th>มาตรการแก้ไข / Corrective Action</th><th>ผู้รับผิดชอบ</th><th>วันที่แล้วเสร็จ</th><th>สถานะ</th><th></th></tr></thead>
         <tbody id="apBody">${apRows}</tbody>
       </table>
       <button class="btn small" id="addAction" style="margin-top:10px;">+ เพิ่มมาตรการ / Add action</button>
@@ -1474,15 +1100,14 @@ function renderForm() {
     </div>
   `);
 
-  // ---- wire up events ----
   document.getElementById("backToDash").onclick = () => { S.editingObs = null; goto("dashboard"); };
   document.getElementById("cancelForm").onclick = () => { S.editingObs = null; goto("dashboard"); };
 
-  const bind = (id, field, transform) => {
+  const bind = (id, field) => {
     const el = document.getElementById(id);
     if (!el) return;
-    el.addEventListener("input", () => { obs[field] = transform ? transform(el.value) : el.value; });
-    el.addEventListener("change", () => { obs[field] = transform ? transform(el.value) : el.value; });
+    const h = () => { obs[field] = el.value; };
+    el.addEventListener("input", h); el.addEventListener("change", h);
   };
   bind("f_date", "date"); bind("f_time", "time"); bind("f_dept", "department");
   bind("f_area", "area"); bind("f_task", "taskObserved"); bind("f_person", "personObserved");
@@ -1491,40 +1116,35 @@ function renderForm() {
 
   document.getElementById("expandAll").onclick = () => { CATS.forEach((_, ci) => S.openCats.add(ci)); render(); };
   document.getElementById("collapseAll").onclick = () => { S.openCats.clear(); render(); };
-
-  document.querySelectorAll("[data-cattoggle]").forEach(h => {
-    h.onclick = () => {
-      const ci = Number(h.dataset.cattoggle);
-      if (S.openCats.has(ci)) S.openCats.delete(ci); else S.openCats.add(ci);
-      render();
-    };
+  document.querySelectorAll("[data-cattoggle]").forEach(h => h.onclick = () => {
+    const ci = Number(h.dataset.cattoggle);
+    if (S.openCats.has(ci)) S.openCats.delete(ci); else S.openCats.add(ci);
+    render();
   });
 
   document.querySelectorAll(".itog button").forEach(b => {
     b.onclick = () => {
       const no = b.dataset.item, val = b.dataset.val;
       const cur = obs.checklist[no] || { status: "", comment: "" };
-      cur.status = cur.status === val ? "" : val;
+      const curNorm = cur.status === "B" ? "NA" : cur.status;
+      cur.status = curNorm === val ? "" : (val === "NA" ? "B" : val);
       obs.checklist[no] = cur;
       const t = computeTotals(obs.checklist);
       document.getElementById("tot_safe").textContent = t.safe;
       document.getElementById("tot_unsafe").textContent = t.unsafe;
       document.getElementById("tot_na").textContent = t.na;
-      // update just this button group without full re-render for smoothness
       const row = b.closest(".itog");
       row.querySelectorAll("button").forEach(x => x.className = "");
-      if (cur.status) row.querySelector('[data-val="' + cur.status + '"]').className = "sel-" + cur.status;
-      // refresh badges lazily on next full render (category counts)
+      const newNorm = cur.status === "B" ? "NA" : cur.status;
+      if (newNorm) row.querySelector('[data-val="' + newNorm + '"]').className = "sel-" + newNorm;
     };
   });
-  document.querySelectorAll("[data-comment]").forEach(inp => {
-    inp.addEventListener("input", () => {
-      const no = inp.dataset.comment;
-      const cur = obs.checklist[no] || { status: "", comment: "" };
-      cur.comment = inp.value;
-      obs.checklist[no] = cur;
-    });
-  });
+  document.querySelectorAll("[data-comment]").forEach(inp => inp.addEventListener("input", () => {
+    const no = inp.dataset.comment;
+    const cur = obs.checklist[no] || { status: "", comment: "" };
+    cur.comment = inp.value;
+    obs.checklist[no] = cur;
+  }));
 
   document.getElementById("addAction").onclick = () => {
     obs.actionPlan = obs.actionPlan || [];
@@ -1541,78 +1161,65 @@ function wireActionRows(obs) {
       const field = el.dataset.apf;
       const handler = () => {
         const item = (obs.actionPlan || []).find(a => a.id === id);
-        if (item) {
-          item[field] = el.value;
-          item.updatedByName = S.session ? S.session.name : item.updatedByName;
-          item.updatedAt = new Date().toISOString();
-        }
+        if (item) { item[field] = el.value; item.updatedByName = S.session ? S.session.name : item.updatedByName; item.updatedAt = new Date().toISOString(); }
       };
-      el.addEventListener("input", handler);
-      el.addEventListener("change", handler);
+      el.addEventListener("input", handler); el.addEventListener("change", handler);
     });
   });
-  document.querySelectorAll("[data-apdel]").forEach(btn => {
-    btn.onclick = () => {
-      obs.actionPlan = (obs.actionPlan || []).filter(a => a.id !== btn.dataset.apdel);
-      render();
-    };
+  document.querySelectorAll("[data-apdel]").forEach(btn => btn.onclick = () => {
+    obs.actionPlan = (obs.actionPlan || []).filter(a => a.id !== btn.dataset.apdel);
+    render();
   });
 
   document.getElementById("saveForm").onclick = async () => {
     const btn = document.getElementById("saveForm");
     btn.disabled = true; btn.textContent = "กำลังบันทึก…";
     try {
-      const savedId = await saveObservation(obs);
+      await saveObservation(obs);
       S.editingObs = null;
       goto("dashboard");
-    } catch (e) {
-      btn.disabled = false; btn.textContent = "บันทึก / Save";
-    }
+    } catch (e) { btn.disabled = false; btn.textContent = "บันทึก / Save"; }
   };
 }
 
 /* ============================================================
    RENDER: ACTION TRACKER
    ============================================================ */
+function actionStatusOf(a) {
+  const today = todayISO();
+  if (a.status === "done") return "done";
+  if (a.dueDate && a.dueDate < today) return "overdue";
+  return a.status === "in_progress" ? "in_progress" : "open";
+}
+
 function renderTracker() {
   const rows = [];
-  S.observations.forEach(o => {
-    (o.actionPlan || []).forEach(a => {
-      rows.push({ obs: o, a });
-    });
-  });
-
-  const statusOf = actionStatusOf;
+  S.observations.forEach(o => (o.actionPlan || []).forEach(a => rows.push({ obs: o, a })));
 
   let filtered = rows.filter(r => {
     if (S.trackFilterDept && r.obs.department !== S.trackFilterDept) return false;
     if (S.trackFilterStatus === "all") return true;
-    return statusOf(r.a) === S.trackFilterStatus;
+    return actionStatusOf(r.a) === S.trackFilterStatus;
   });
-
   filtered.sort((x, y) => (x.a.dueDate || "9999").localeCompare(y.a.dueDate || "9999"));
 
-  const deptOptions = S.departments.map(d =>
-    `<option value="${esc(d.name)}" ${S.trackFilterDept === d.name ? "selected" : ""}>${esc(d.name)}</option>`
-  ).join("");
-
+  const deptOptions = S.departments.map(d => `<option value="${esc(d.name)}" ${S.trackFilterDept === d.name ? "selected" : ""}>${esc(d.name)}</option>`).join("");
   const pillFor = st => ({
-    done: '<span class="pill green">เสร็จสิ้น</span>',
-    overdue: '<span class="pill red">เกินกำหนด</span>',
-    due_soon: '<span class="pill amber">ใกล้ครบกำหนด</span>',
-    in_progress: '<span class="pill blue">กำลังทำ</span>',
-    open: '<span class="pill grey">เปิดอยู่</span>',
+    done: '<span class="pill green">เสร็จสิ้น</span>', overdue: '<span class="pill red">เกินกำหนด</span>',
+    in_progress: '<span class="pill blue">กำลังทำ</span>', open: '<span class="pill amber">เปิดอยู่</span>',
   }[st]);
 
   const trows = filtered.map(({ obs, a }) => `
     <tr>
       <td>
         <div style="font-weight:600;">${esc(a.action || "(ไม่มีรายละเอียด)")}</div>
-        <div style="font-size:11.5px;color:var(--steel);">${esc(obs.department || "-")} • ${esc(obs.area || "-")} • ${fmtDate(obs.date)}</div>
+        <div style="font-size:11.5px;color:var(--steel);">${esc(obs.department || "-")} • ${esc(obs.area || "-")} • ${fmtDate(obs.date)}
+          <button class="btn small ghost" style="padding:1px 6px;margin-left:4px;" data-editobs="${esc(obs.id)}">แก้ไข</button>
+        </div>
       </td>
       <td>${esc(a.responsible || "-")}</td>
       <td>${a.dueDate ? fmtDate(a.dueDate) : "-"}</td>
-      <td>${pillFor(statusOf(a))}</td>
+      <td>${pillFor(actionStatusOf(a))}</td>
       <td style="min-width:140px;">
         <select data-obs="${esc(obs.id)}" data-act="${esc(a.id)}">
           <option value="open" ${a.status === "open" ? "selected" : ""}>เปิด</option>
@@ -1621,181 +1228,82 @@ function renderTracker() {
         </select>
         ${a.updatedByName ? `<div class="apn-meta">แก้ไขล่าสุดโดย ${esc(a.updatedByName)}${a.updatedAt ? " • " + fmtDateTime(a.updatedAt) : ""}</div>` : ``}
       </td>
-    </tr>
-  `).join("");
+    </tr>`).join("");
 
   renderShell(`
     <h2 style="margin-bottom:4px;">ติดตามการแก้ไข</h2>
     <div style="color:var(--steel);font-size:13px;margin-bottom:16px;">Action Plan Tracker — across every observation</div>
-
     <div class="toolbar">
-      <select id="tDept" style="min-width:160px;">
-        <option value="">ทุกแผนก / All depts</option>
-        ${deptOptions}
-      </select>
+      <select id="tDept" style="min-width:160px;"><option value="">ทุกแผนก / All depts</option>${deptOptions}</select>
       <div class="seg" id="tStatus">
         <button data-v="all" class="${S.trackFilterStatus==='all'?'active':''}">ทั้งหมด</button>
         <button data-v="open" class="${S.trackFilterStatus==='open'?'active':''}">เปิดอยู่</button>
         <button data-v="in_progress" class="${S.trackFilterStatus==='in_progress'?'active':''}">กำลังทำ</button>
-        <button data-v="due_soon" class="${S.trackFilterStatus==='due_soon'?'active':''}">ใกล้ครบกำหนด</button>
         <button data-v="overdue" class="${S.trackFilterStatus==='overdue'?'active':''}">เกินกำหนด</button>
         <button data-v="done" class="${S.trackFilterStatus==='done'?'active':''}">เสร็จสิ้น</button>
       </div>
     </div>
-
     ${trows ? `
       <div style="overflow-x:auto;">
         <table class="tracktable">
           <thead><tr><th>มาตรการแก้ไข</th><th>ผู้รับผิดชอบ</th><th>วันครบกำหนด</th><th>สถานะ</th><th>อัปเดตสถานะ</th></tr></thead>
           <tbody>${trows}</tbody>
         </table>
-      </div>
-    ` : `
-      <div class="empty">
-        <div class="big">&#9989;</div>
-        <div>ไม่พบรายการแก้ไขในเงื่อนไขนี้</div>
-      </div>
-    `}
+      </div>` : `<div class="empty"><div class="big">&#9989;</div><div>ไม่พบรายการแก้ไขในเงื่อนไขนี้</div></div>`}
   `);
 
   document.getElementById("tDept").onchange = e => { S.trackFilterDept = e.target.value; render(); };
-  document.querySelectorAll("#tStatus button").forEach(b => {
-    b.onclick = () => { S.trackFilterStatus = b.dataset.v; render(); };
-  });
-  document.querySelectorAll("[data-obs][data-act]").forEach(sel => {
-    sel.onchange = () => updateActionItemInObs(sel.dataset.obs, sel.dataset.act, { status: sel.value });
-  });
+  document.querySelectorAll("#tStatus button").forEach(b => b.onclick = () => { S.trackFilterStatus = b.dataset.v; render(); });
+  document.querySelectorAll("[data-obs][data-act]").forEach(sel => sel.onchange = () => updateActionItemInObs(sel.dataset.obs, sel.dataset.act, { status: sel.value }));
+  document.querySelectorAll("[data-editobs]").forEach(b => b.onclick = () => openObsForEdit(b.dataset.editobs));
 }
 
-/* ============================================================
-   RENDER: DEPARTMENTS
-   ============================================================ */
 /* ============================================================
    RENDER: REPORTS
    ============================================================ */
 function monthLabelTh(ym) {
-  if (!ym) return "-";
-  const parts = ym.split("-").map(Number);
-  const d = new Date(parts[0], parts[1] - 1, 1);
-  return d.toLocaleDateString("th-TH", { year: "numeric", month: "long" });
+  if (!ym) return "";
+  const [y, m] = ym.split("-").map(Number);
+  const d = new Date(y, m - 1, 1);
+  return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }
 
 function computeReportData() {
   let scope = S.observations.slice();
   if (!S.reportsAllTime) scope = scope.filter(o => (o.date || "").slice(0, 7) === S.reportsMonth);
   if (S.reportsDept) scope = scope.filter(o => o.department === S.reportsDept);
-
-  let scopeTime = S.observations.slice();
-  if (!S.reportsAllTime) scopeTime = scopeTime.filter(o => (o.date || "").slice(0, 7) === S.reportsMonth);
+  if (S.reportsArea) scope = scope.filter(o => (o.area || "(ไม่ระบุพื้นที่)") === S.reportsArea);
 
   let totSafe = 0, totUnsafe = 0, totBarrier = 0;
+  const itemUnsafeCount = {};
   scope.forEach(o => {
     const t = o.totals || computeTotals(o.checklist);
     totSafe += t.safe; totUnsafe += t.unsafe; totBarrier += t.na;
-  });
-
-  const deptCounts = {};
-  scopeTime.forEach(o => { const d = o.department || "(ไม่ระบุ)"; deptCounts[d] = (deptCounts[d] || 0) + 1; });
-  const deptLabels = Object.keys(deptCounts).sort((a, b) => deptCounts[b] - deptCounts[a]);
-  const deptData = deptLabels.map(l => deptCounts[l]);
-
-  const itemCounts = {};
-  scope.forEach(o => {
     ITEMS.forEach(it => {
       const v = o.checklist && o.checklist[it.no];
-      if (v && v.status === "U") itemCounts[it.no] = (itemCounts[it.no] || 0) + 1;
+      if (v && v.status === "U") itemUnsafeCount[it.no] = (itemUnsafeCount[it.no] || 0) + 1;
     });
   });
-  const rankedFull = Object.keys(itemCounts)
-    .map(no => ({ no: Number(no), count: itemCounts[no] }))
+
+  const deptCount = {};
+  scope.forEach(o => { const d = o.department || "(ไม่ระบุแผนก)"; deptCount[d] = (deptCount[d] || 0) + 1; });
+  const deptLabels = Object.keys(deptCount).sort((a, b) => deptCount[b] - deptCount[a]);
+  const deptData = deptLabels.map(d => deptCount[d]);
+
+  const submitterCount = {};
+  scope.forEach(o => {
+    const nm = o.observerName || "(ไม่ระบุชื่อ)";
+    if (!submitterCount[nm]) submitterCount[nm] = { count: 0, dept: o.department || "" };
+    submitterCount[nm].count++;
+  });
+  const submitters = Object.keys(submitterCount)
+    .map(nm => ({ name: nm, count: submitterCount[nm].count, dept: submitterCount[nm].dept }))
     .sort((a, b) => b.count - a.count);
 
-  return { scope, scopeTime, totSafe, totUnsafe, totBarrier, deptLabels, deptData, rankedFull };
-}
+  const areaSet = new Set();
+  S.observations.forEach(o => { if (!S.reportsDept || o.department === S.reportsDept) areaSet.add(o.area || "(ไม่ระบุพื้นที่)"); });
 
-function renderReports() {
-  const rd = computeReportData();
-  const ranked = rd.rankedFull.slice(0, 10);
-  const maxCount = ranked.length ? ranked[0].count : 1;
-
-  const deptOptions = S.departments.map(d =>
-    `<option value="${esc(d.name)}" ${S.reportsDept === d.name ? "selected" : ""}>${esc(d.name)}</option>`
-  ).join("");
-
-  const rankHtml = ranked.map((r, i) => {
-    const item = ITEMS.find(x => x.no === r.no);
-    const cat = CATS[item.catIndex];
-    const pct = Math.max(6, Math.round((r.count / maxCount) * 100));
-    return `
-      <div class="rankrow">
-        <div class="rn">${i + 1}</div>
-        <div class="rt">
-          <div class="en">${item.no}. ${esc(item.en)}</div>
-          <div class="cat">${esc(cat[0])} • ${esc(item.th)}</div>
-          <div class="rbar" style="width:${pct}%;"></div>
-        </div>
-        <div class="rc">${r.count}</div>
-      </div>
-    `;
-  }).join("");
-
-  renderShell(`
-    <h2 style="margin-bottom:4px;">รายงานสรุป</h2>
-    <div style="color:var(--steel);font-size:13px;margin-bottom:16px;">Reports — จำนวน BBS ต่อแผนกต่อเดือน และหัวข้อที่พบไม่ปลอดภัยมากที่สุด</div>
-
-    <div class="toolbar">
-      <input type="month" id="rMonth" value="${esc(S.reportsMonth)}" ${S.reportsAllTime ? "disabled" : ""}>
-      <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--steel);">
-        <input type="checkbox" id="rAllTime" ${S.reportsAllTime ? "checked" : ""}> ตลอดเวลา / All-time
-      </label>
-      <select id="rDept"><option value="">ทุกแผนก / All depts</option>${deptOptions}</select>
-      <div class="spacer"></div>
-      <button class="btn amber" id="exportXlsx">⬇ Export Excel</button>
-    </div>
-
-    <div class="kpirow">
-      <div class="kpi total"><div class="kv">${rd.scope.length}</div><div class="kl">รายการสังเกตทั้งหมด</div></div>
-      <div class="kpi safe"><div class="kv">${rd.totSafe}</div><div class="kl">Safe / ปลอดภัย</div></div>
-      <div class="kpi unsafe"><div class="kv">${rd.totUnsafe}</div><div class="kl">Unsafe / ไม่ปลอดภัย</div></div>
-      <div class="kpi barrier"><div class="kv">${rd.totBarrier}</div><div class="kl">Barriers (B) / ข้อจำกัด</div></div>
-    </div>
-
-    <div class="chartgrid">
-      <div class="chartcard">
-        <h3>สรุปผล Safe / Unsafe / Barriers</h3>
-        <div class="chartwrap" id="donutChart"></div>
-      </div>
-      <div class="chartcard">
-        <h3>จำนวน BBS ที่ส่งต่อแผนก ${S.reportsAllTime ? "(ตลอดเวลา)" : "(" + esc(monthLabelTh(S.reportsMonth)) + ")"}</h3>
-        <div class="chartwrap">${rd.deptLabels.length ? `<div id="deptChart" style="height:100%;"></div>` : `<div class="empty" style="padding:30px 10px;"><div class="big">&#128202;</div><div style="font-size:12.5px;">ไม่มีข้อมูลในช่วงที่เลือก</div></div>`}</div>
-      </div>
-    </div>
-
-    <div class="chartcard" style="margin-bottom:18px;">
-      <h3>10 หัวข้อที่พบ "ไม่ปลอดภัย" มากที่สุด (เรียงจากมากไปน้อย)</h3>
-      ${ranked.length
-        ? `<div id="topChart"></div>`
-        : `<div class="empty" style="padding:20px;"><div class="big">&#9989;</div><div>ไม่พบข้อมูล Unsafe ในช่วงที่เลือก</div></div>`}
-    </div>
-
-    ${ranked.length ? `<div class="card"><div class="section-title" style="margin-top:0;">รายละเอียดอันดับ</div>${rankHtml}</div>` : ``}
-  `);
-
-  document.getElementById("rMonth").onchange = e => { S.reportsMonth = e.target.value; render(); };
-  document.getElementById("rAllTime").onchange = e => { S.reportsAllTime = e.target.checked; render(); };
-  document.getElementById("rDept").onchange = e => { S.reportsDept = e.target.value; render(); };
-  document.getElementById("exportXlsx").onclick = () => exportToExcel();
-
-  // ---- Charts: pure CSS/HTML (no external chart library, so nothing can fail to load) ----
-  const dEl = document.getElementById("donutChart");
-  if (dEl) dEl.innerHTML = donutHtml(rd.totSafe, rd.totUnsafe, rd.totBarrier);
-  const bEl = document.getElementById("deptChart");
-  if (bEl) bEl.innerHTML = vbarsHtml(rd.deptLabels, rd.deptData, "var(--blue)");
-  const tEl = document.getElementById("topChart");
-  if (tEl) tEl.innerHTML = hbarsHtml(ranked.map(r => {
-    const it = ITEMS.find(x => x.no === r.no);
-    return { label: it.no + ". " + it.en, sub: it.th, value: r.count };
-  }));
+  return { scope, totSafe, totUnsafe, totBarrier, itemUnsafeCount, deptLabels, deptData, submitters, areaList: Array.from(areaSet).sort() };
 }
 
 function donutHtml(safe, unsafe, barrier) {
@@ -1815,7 +1323,6 @@ function donutHtml(safe, unsafe, barrier) {
       </div>
     </div>`;
 }
-
 function vbarsHtml(labels, values, color) {
   if (!labels.length) return '<div class="empty" style="padding:30px 10px;"><div class="big">&#128202;</div><div style="font-size:12.5px;">ไม่มีข้อมูลในช่วงที่เลือก</div></div>';
   const max = Math.max(...values, 1), plot = 170;
@@ -1825,15 +1332,138 @@ function vbarsHtml(labels, values, color) {
       <div class="vlab" title="${esc(l)}">${esc(l)}</div>
     </div>`).join("")}</div>`;
 }
-
-function hbarsHtml(rows) {
-  const max = Math.max(...rows.map(r => r.value), 1);
-  return `<div class="hbars">${rows.map(r => `
+function hbarsHtml(rowsData) {
+  if (!rowsData.length) return '<div class="empty" style="padding:20px;"><div class="big">&#9989;</div><div>ไม่พบข้อมูล Unsafe ในช่วงที่เลือก</div></div>';
+  const max = Math.max(...rowsData.map(r => r.value), 1);
+  return `<div class="hbars">${rowsData.map(r => `
     <div class="hrow">
       <div class="hlab"><span>${esc(r.label)}</span><small>${esc(r.sub || "")}</small></div>
       <div class="htrack"><div class="hfill" style="width:${Math.max(2, r.value / max * 100)}%;"></div></div>
       <div class="hval">${r.value}</div>
     </div>`).join("")}</div>`;
+}
+
+function renderReports() {
+  const rd = computeReportData();
+  const deptOptions = S.departments.map(d => `<option value="${esc(d.name)}" ${S.reportsDept === d.name ? "selected" : ""}>${esc(d.name)}</option>`).join("");
+  const areaOptions = rd.areaList.map(a => `<option value="${esc(a)}" ${S.reportsArea === a ? "selected" : ""}>${esc(a)}</option>`).join("");
+
+  const ranked = Object.keys(rd.itemUnsafeCount)
+    .map(no => ({ no: Number(no), count: rd.itemUnsafeCount[no] }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+
+  const rankHtml = ranked.map((r, i) => {
+    const it = ITEMS.find(x => x.no === r.no);
+    const cat = CATS[it.catIndex];
+    return `
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;${i ? "border-top:1px solid var(--line);" : ""}">
+        <div style="font-family:var(--font-head);font-weight:700;font-size:15px;color:var(--steel);width:22px;flex:none;">${i + 1}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:600;font-size:13px;">${it.no}. ${esc(it.en)}</div>
+          <div style="font-size:11.5px;color:var(--steel);">${esc(cat[0])} • ${esc(it.th)}</div>
+        </div>
+        <div class="pill red">${r.count} ครั้ง</div>
+      </div>`;
+  }).join("");
+
+  const subHtml = rd.submitters.length ? rd.submitters.map(s => `
+    <div class="subrow">
+      <div><div class="snm">${esc(s.name)}</div>${s.dept ? `<div class="sdp">${esc(s.dept)}</div>` : ``}</div>
+      <div class="subcount">${s.count}</div>
+    </div>`).join("") : `<div class="empty" style="padding:20px;"><div class="big">&#128100;</div><div style="font-size:12.5px;">ยังไม่มีข้อมูลในช่วงที่เลือก</div></div>`;
+
+  const obsRows = rd.scope.slice().sort((a, b) => (b.date || "").localeCompare(a.date || "")).map(o => {
+    const t = o.totals || computeTotals(o.checklist);
+    const closed = isObsClosed(o);
+    return `
+      <tr>
+        <td>${fmtDate(o.date)}</td>
+        <td>${esc(o.department || "-")}</td>
+        <td>${esc(o.area || "-")}</td>
+        <td>${esc(o.observerName || "-")}</td>
+        <td style="color:var(--green);font-weight:700;">${t.safe}</td>
+        <td style="color:var(--red);font-weight:700;">${t.unsafe}</td>
+        <td style="color:var(--steel);font-weight:700;">${t.na}</td>
+        <td><span class="pill ${closed ? "green" : "amber"}">${closed ? "ปิดแล้ว" : "เปิดอยู่"}</span></td>
+        <td><button class="btn small" data-editobs2="${esc(o.id)}">แก้ไข</button></td>
+      </tr>`;
+  }).join("");
+
+  renderShell(`
+    <h2 style="margin-bottom:4px;">รายงานสรุป</h2>
+    <div style="color:var(--steel);font-size:13px;margin-bottom:16px;">Reports — จำนวน BBS ต่อแผนกต่อเดือน พื้นที่ที่พบ และหัวข้อที่พบไม่ปลอดภัยมากที่สุด</div>
+
+    <div class="toolbar">
+      <input type="month" id="rMonth" value="${esc(S.reportsMonth)}" ${S.reportsAllTime ? "disabled" : ""} style="width:auto;">
+      <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--steel);">
+        <input type="checkbox" id="rAllTime" ${S.reportsAllTime ? "checked" : ""} style="width:auto;"> ตลอดเวลา / All-time
+      </label>
+      <select id="rDept" style="min-width:150px;"><option value="">ทุกแผนก / All depts</option>${deptOptions}</select>
+      <select id="rArea" style="min-width:150px;"><option value="">ทุกพื้นที่ / All areas</option>${areaOptions}</select>
+      <div class="spacer"></div>
+      <button class="btn amber" id="exportXlsx">⬇ Export Excel</button>
+    </div>
+
+    <div class="kpirow">
+      <div class="kpi total"><div class="kv">${rd.scope.length}</div><div class="kl">รายการสังเกตทั้งหมด</div></div>
+      <div class="kpi safe"><div class="kv">${rd.totSafe}</div><div class="kl">Safe / ปลอดภัย</div></div>
+      <div class="kpi unsafe"><div class="kv">${rd.totUnsafe}</div><div class="kl">Unsafe / ไม่ปลอดภัย</div></div>
+      <div class="kpi barrier"><div class="kv">${rd.totBarrier}</div><div class="kl">Barriers (B) / ข้อจำกัด</div></div>
+    </div>
+
+    <div class="chartgrid">
+      <div class="chartcard">
+        <h3>สรุปผล Safe / Unsafe / Barriers</h3>
+        <div class="chartwrap" id="donutChart"></div>
+      </div>
+      <div class="chartcard">
+        <h3>จำนวน BBS ที่ส่งต่อแผนก ${S.reportsAllTime ? "(ตลอดเวลา)" : "(" + esc(monthLabelTh(S.reportsMonth)) + ")"}</h3>
+        <div class="chartwrap" id="deptChart"></div>
+      </div>
+    </div>
+
+    <div class="chartgrid">
+      <div class="chartcard" style="grid-column:1/-1;">
+        <h3>👥 ผู้ส่งรายงาน / Submitters ${S.reportsArea ? "— พื้นที่: " + esc(S.reportsArea) : ""}</h3>
+        <div class="sublist">${subHtml}</div>
+      </div>
+    </div>
+
+    <div class="chartcard" style="margin-bottom:18px;">
+      <h3>10 หัวข้อที่พบ "ไม่ปลอดภัย" มากที่สุด (เรียงจากมากไปน้อย)</h3>
+      <div id="topChart"></div>
+    </div>
+
+    ${ranked.length ? `<div class="card" style="margin-bottom:18px;"><div class="section-title" style="margin-top:0;">รายละเอียดอันดับ</div>${rankHtml}</div>` : ``}
+
+    <div class="section-title">รายการสังเกตการณ์ที่ส่งเข้ามา / Submitted Observations</div>
+    <div class="card reptable-wrap">
+      ${obsRows ? `
+      <table class="reptable">
+        <thead><tr><th>วันที่</th><th>แผนก</th><th>พื้นที่</th><th>ผู้สังเกต</th><th>Safe</th><th>Unsafe</th><th>B</th><th>สถานะ</th><th></th></tr></thead>
+        <tbody>${obsRows}</tbody>
+      </table>` : `<div class="empty" style="padding:24px;"><div class="big">&#128203;</div><div style="font-size:12.5px;">ไม่มีรายการในช่วงที่เลือก</div></div>`}
+    </div>
+  `);
+
+  document.getElementById("rMonth").onchange = e => { S.reportsMonth = e.target.value; render(); };
+  document.getElementById("rAllTime").onchange = e => { S.reportsAllTime = e.target.checked; render(); };
+  document.getElementById("rDept").onchange = e => { S.reportsDept = e.target.value; S.reportsArea = ""; render(); };
+  document.getElementById("rArea").onchange = e => { S.reportsArea = e.target.value; render(); };
+  document.getElementById("exportXlsx").onclick = () => exportToExcel();
+  document.querySelectorAll("[data-editobs2]").forEach(b => b.onclick = () => openObsForEdit(b.dataset.editobs2));
+
+  // ---- Charts: pure CSS/HTML (no external chart library, so nothing can fail to load) ----
+  const dEl = document.getElementById("donutChart");
+  if (dEl) dEl.innerHTML = donutHtml(rd.totSafe, rd.totUnsafe, rd.totBarrier);
+  const bEl = document.getElementById("deptChart");
+  if (bEl) bEl.innerHTML = vbarsHtml(rd.deptLabels, rd.deptData, "var(--blue)");
+  const tEl = document.getElementById("topChart");
+  if (tEl) tEl.innerHTML = hbarsHtml(ranked.map(r => {
+    const it = ITEMS.find(x => x.no === r.no);
+    return { label: it.no + ". " + it.en, sub: it.th, value: r.count };
+  }));
 }
 
 async function exportToExcel() {
@@ -1843,13 +1473,9 @@ async function exportToExcel() {
   try {
     const rd = computeReportData();
 
-    // ---- Sheet: Department x Month summary (last 12 months, across ALL data) ----
     const months = [];
     { const base = new Date(); base.setDate(1);
-      for (let i = 11; i >= 0; i--) {
-        const dd = new Date(base.getFullYear(), base.getMonth() - i, 1);
-        months.push(dd.toISOString().slice(0, 7));
-      } }
+      for (let i = 11; i >= 0; i--) { const dd = new Date(base.getFullYear(), base.getMonth() - i, 1); months.push(dd.toISOString().slice(0, 7)); } }
     const deptSet = new Set(S.observations.map(o => o.department || "(ไม่ระบุ)"));
     S.departments.forEach(d => deptSet.add(d.name));
     const depts = Array.from(deptSet);
@@ -1857,125 +1483,137 @@ async function exportToExcel() {
     depts.forEach(dep => {
       const row = [dep];
       let total = 0;
-      months.forEach(m => {
-        const c = S.observations.filter(o => (o.department || "(ไม่ระบุ)") === dep && (o.date || "").slice(0, 7) === m).length;
-        row.push(c); total += c;
-      });
+      months.forEach(m => { const c = S.observations.filter(o => (o.department || "(ไม่ระบุ)") === dep && (o.date || "").slice(0, 7) === m).length; row.push(c); total += c; });
       row.push(total);
       summaryAoA.push(row);
     });
-    const wsSummary = XLSX.utils.aoa_to_sheet(summaryAoA);
 
-    // ---- Sheet: Top unsafe items (full ranking, current filter scope) ----
-    const topAoA = [["อันดับ", "ข้อที่", "หมวดหมู่ (EN)", "หมวดหมู่ (TH)", "หัวข้อ (EN)", "หัวข้อ (TH)", "จำนวนครั้ง Unsafe"]];
-    rd.rankedFull.forEach((r, i) => {
-      const item = ITEMS.find(x => x.no === r.no);
-      const cat = CATS[item.catIndex];
-      topAoA.push([i + 1, item.no, cat[0], cat[1], item.en, item.th, r.count]);
-    });
-    const wsTop = XLSX.utils.aoa_to_sheet(topAoA);
+    const rankAoA = [["อันดับ", "รหัสข้อ", "หัวข้อ (EN)", "หัวข้อ (TH)", "หมวดหมู่", "จำนวนครั้งที่ Unsafe"]];
+    Object.keys(rd.itemUnsafeCount).map(no => ({ no: Number(no), count: rd.itemUnsafeCount[no] }))
+      .sort((a, b) => b.count - a.count)
+      .forEach((r, i) => { const it = ITEMS.find(x => x.no === r.no); rankAoA.push([i + 1, it.no, it.en, it.th, CATS[it.catIndex][0], r.count]); });
 
-    // ---- Sheet: Observations (current filter scope) ----
-    const obsAoA = [["ID", "วันที่", "แผนก", "พื้นที่", "งานที่สังเกต", "ผู้สังเกตการณ์", "ผู้ถูกสังเกต", "ประเภท", "Safe", "Unsafe", "Barriers (B)", "Coached", "วันครบกำหนดติดตาม", "ความเห็นเพิ่มเติม"]];
-    rd.scope.forEach(o => {
+    const obsAoA = [["ID", "วันที่", "แผนก", "พื้นที่", "งานที่สังเกต", "ผู้สังเกต", "ผู้ถูกสังเกต", "ประเภท", "Safe", "Unsafe", "Barriers (B)", "Coached", "Follow-up Due", "ความเห็น"]];
+    S.observations.forEach(o => {
       const t = o.totals || computeTotals(o.checklist);
       obsAoA.push([o.id || "", o.date || "", o.department || "", o.area || "", o.taskObserved || "", o.observerName || "", o.personObserved || "", o.obsType || "", t.safe, t.unsafe, t.na, o.coached || "", o.followUpDueDate || "", o.overallComments || ""]);
     });
-    const wsObs = XLSX.utils.aoa_to_sheet(obsAoA);
 
-    // ---- Sheet: Checklist detail (current filter scope) ----
-    const detAoA = [["Obs ID", "วันที่", "แผนก", "พื้นที่", "ข้อที่", "หมวดหมู่", "หัวข้อ (EN)", "หัวข้อ (TH)", "สถานะ", "หมายเหตุ"]];
-    rd.scope.forEach(o => {
+    const detailAoA = [["Observation ID", "วันที่", "แผนก", "พื้นที่", "ข้อที่", "หัวข้อ (EN)", "หัวข้อ (TH)", "สถานะ", "หมายเหตุ"]];
+    S.observations.forEach(o => {
       ITEMS.forEach(it => {
         const v = o.checklist && o.checklist[it.no];
-        if (!v || !v.status) return;
-        const cat = CATS[it.catIndex];
-        const statusLabel = v.status === "S" ? "Safe" : v.status === "U" ? "Unsafe" : "Barriers (B)";
-        detAoA.push([o.id || "", o.date || "", o.department || "", o.area || "", it.no, cat[0], it.en, it.th, statusLabel, v.comment || ""]);
+        if (v && v.status) {
+          const st = v.status === "B" ? "B (Barrier)" : v.status === "NA" ? "B (Barrier)" : v.status;
+          detailAoA.push([o.id || "", o.date || "", o.department || "", o.area || "", it.no, it.en, it.th, st, v.comment || ""]);
+        }
       });
     });
-    const wsDet = XLSX.utils.aoa_to_sheet(detAoA);
 
-    // ---- Sheet: Action plan (current filter scope) ----
-    const apAoA = [["Obs ID", "วันที่", "แผนก", "พื้นที่", "มาตรการแก้ไข", "ผู้รับผิดชอบ", "วันครบกำหนด", "สถานะ", "แก้ไขล่าสุดโดย", "วันที่แก้ไขล่าสุด"]];
-    rd.scope.forEach(o => {
-      (o.actionPlan || []).forEach(a => {
-        const stLabel = a.status === "done" ? "เสร็จสิ้น" : a.status === "in_progress" ? "กำลังทำ" : "เปิด";
-        apAoA.push([o.id || "", o.date || "", o.department || "", o.area || "", a.action || "", a.responsible || "", a.dueDate || "", stLabel, a.updatedByName || "", a.updatedAt || ""]);
-      });
-    });
-    const wsAp = XLSX.utils.aoa_to_sheet(apAoA);
+    const apAoA = [["Observation ID", "วันที่", "แผนก", "พื้นที่", "มาตรการแก้ไข", "ผู้รับผิดชอบ", "วันครบกำหนด", "สถานะ", "แก้ไขล่าสุดโดย", "แก้ไขล่าสุดเมื่อ"]];
+    S.observations.forEach(o => (o.actionPlan || []).forEach(a => {
+      apAoA.push([o.id || "", o.date || "", o.department || "", o.area || "", a.action || "", a.responsible || "", a.dueDate || "", a.status || "", a.updatedByName || "", a.updatedAt || ""]);
+    }));
 
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, wsSummary, "Dept-Month Summary");
-    XLSX.utils.book_append_sheet(wb, wsTop, "Top Unsafe Items");
-    XLSX.utils.book_append_sheet(wb, wsObs, "Observations");
-    XLSX.utils.book_append_sheet(wb, wsDet, "Checklist Detail");
-    XLSX.utils.book_append_sheet(wb, wsAp, "Action Plan");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summaryAoA), "สรุปแผนกxเดือน");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rankAoA), "อันดับหัวข้อ Unsafe");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(obsAoA), "รายการสังเกต");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(detailAoA), "รายละเอียด Checklist");
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(apAoA), "Action Plan");
 
     const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-    const blob = new Blob([wbout], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const blob = new Blob([wbout], { type: "application/octet-stream" });
     const filename = "BBS_Report_" + todayISO() + ".xlsx";
 
-    // Plain browser download (works in any standard web browser)
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 4000);
     toast("ดาวน์โหลดไฟล์แล้ว / Downloaded");
-  } catch (e) {
-    console.error(e);
-    toast("สร้างไฟล์ไม่สำเร็จ / Export failed");
   } finally {
-    const btn2 = document.getElementById("exportXlsx");
-    if (btn2) { btn2.disabled = false; btn2.textContent = "⬇ Export Excel"; }
+    if (btn) { btn.disabled = false; btn.textContent = "⬇ Export Excel"; }
   }
 }
 
+/* ============================================================
+   RENDER: DEPARTMENTS
+   ============================================================ */
 function renderDepartments() {
+  const admin = isAdmin();
   const rows = S.departments.map(d => {
     const count = S.observations.filter(o => o.department === d.name).length;
     return `
-      <div class="deptrow">
-        <div><span class="nm">${esc(d.name)}</span>${d.nameTh ? `<span class="nmth">${esc(d.nameTh)}</span>` : ``}</div>
-        <span class="pill grey">${count} รายการ</span>
-      </div>
-    `;
+      <div class="deptrow" data-drow="${esc(d.id)}">
+        <div class="dinfo"><span class="nm">${esc(d.name)}</span>${d.nameTh ? `<span class="nmth">${esc(d.nameTh)}</span>` : ``}</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="pill grey">${count} รายการ</span>
+          ${admin ? `
+            <div class="dactions">
+              <button class="btn small ghost" data-drename="${esc(d.id)}">แก้ไข</button>
+              <button class="btn small danger" data-ddelete="${esc(d.id)}">ลบ</button>
+            </div>` : ``}
+        </div>
+      </div>`;
   }).join("");
 
   renderShell(`
     <h2 style="margin-bottom:4px;">แผนก / Departments</h2>
-    <div style="color:var(--steel);font-size:13px;margin-bottom:16px;">จัดการรายชื่อแผนกที่ใช้ในระบบ</div>
+    <div style="color:var(--steel);font-size:13px;margin-bottom:16px;">
+      ${admin ? "จัดการรายชื่อแผนกที่ใช้ในระบบ (คุณเป็นแอดมิน)" : "รายชื่อแผนกนี้กำหนดโดยผู้ดูแลระบบ หากต้องการเพิ่ม/แก้ไข กรุณาติดต่อแอดมิน"}
+    </div>
 
+    ${admin ? `
     <div class="card">
       <div class="formgrid">
         <div><label class="field-label">ชื่อแผนก (EN)</label><input type="text" id="d_en" placeholder="e.g. Maintenance"></div>
         <div><label class="field-label">ชื่อแผนก (TH)</label><input type="text" id="d_th" placeholder="เช่น ซ่อมบำรุง"></div>
       </div>
       <button class="btn amber" id="d_add" style="margin-top:12px;">+ เพิ่มแผนก / Add department</button>
-    </div>
+    </div>` : `<div class="notice">👁️ คุณกำลังดูในโหมดอ่านอย่างเดียว — เฉพาะแอดมินเท่านั้นที่เพิ่ม/แก้ไข/ลบแผนกได้</div>`}
 
-    <div class="deptlist">${rows || `<div class="empty"><div class="big">&#127970;</div><div>ยังไม่มีแผนก เพิ่มแผนกแรกของคุณด้านบน</div></div>`}</div>
+    <div class="deptlist">${rows || `<div class="empty"><div class="big">&#127970;</div><div>${admin ? "ยังไม่มีแผนก เพิ่มแผนกแรกของคุณด้านบน" : "ยังไม่มีแผนกในระบบ กรุณาติดต่อแอดมิน"}</div></div>`}</div>
 
     <div class="card" style="margin-top:20px;">
       <div style="font-weight:600;margin-bottom:6px;font-size:13.5px;">บัญชีของฉัน / My account</div>
-      <div style="font-size:13px;color:var(--steel);">${esc(S.session ? S.session.name : "")} • ${esc(S.session ? S.session.department : "")}</div>
+      <div style="font-size:13px;color:var(--steel);">${esc(S.session ? S.session.name : "")} • ${esc(S.session ? S.session.department : "")}${admin ? ' <span class="adminbadge">ADMIN</span>' : ""}</div>
       <button class="btn small" id="switchDeptBtn" style="margin-top:10px;">เปลี่ยนแผนกของฉัน / Change my department</button>
     </div>
   `);
 
-  document.getElementById("d_add").onclick = async () => {
-    const en = document.getElementById("d_en").value;
-    const th = document.getElementById("d_th").value;
-    if (!en.trim() && !th.trim()) { toast("กรุณากรอกชื่อแผนก"); return; }
-    await addDepartment(en, th);
-    document.getElementById("d_en").value = "";
-    document.getElementById("d_th").value = "";
-  };
+  if (admin) {
+    document.getElementById("d_add").onclick = async () => {
+      const en = document.getElementById("d_en").value;
+      const th = document.getElementById("d_th").value;
+      if (!en.trim() && !th.trim()) { toast("กรุณากรอกชื่อแผนก"); return; }
+      await addDepartment(en, th);
+      document.getElementById("d_en").value = ""; document.getElementById("d_th").value = "";
+    };
+    document.querySelectorAll("[data-drename]").forEach(btn => btn.onclick = () => {
+      const row = document.querySelector(`[data-drow="${btn.dataset.drename}"]`);
+      const dep = S.departments.find(d => d.id === btn.dataset.drename);
+      if (!row || !dep) return;
+      row.querySelector(".dinfo").innerHTML = `
+        <input type="text" class="renameinput" id="ren_en_${dep.id}" value="${esc(dep.name)}" style="width:110px;display:inline-block;">
+        <input type="text" class="renameinput" id="ren_th_${dep.id}" value="${esc(dep.nameTh || "")}" style="width:110px;display:inline-block;margin-left:4px;">
+        <button class="btn small amber" id="ren_ok_${dep.id}" style="margin-left:4px;">บันทึก</button>
+        <button class="btn small ghost" id="ren_cancel_${dep.id}">ยกเลิก</button>`;
+      document.getElementById(`ren_ok_${dep.id}`).onclick = async () => {
+        const en = document.getElementById(`ren_en_${dep.id}`).value;
+        const th = document.getElementById(`ren_th_${dep.id}`).value;
+        await renameDepartment(dep.id, en, th);
+      };
+      document.getElementById(`ren_cancel_${dep.id}`).onclick = () => render();
+    });
+    document.querySelectorAll("[data-ddelete]").forEach(btn => btn.onclick = async () => {
+      const dep = S.departments.find(d => d.id === btn.dataset.ddelete);
+      if (!dep) return;
+      if (!confirm(`ลบแผนก "${dep.name}" ใช่หรือไม่?`)) return;
+      await deleteDepartment(dep.id);
+    });
+  }
+
   document.getElementById("switchDeptBtn").onclick = () => { S.view = "profile"; render(); };
 }
 
@@ -1985,10 +1623,7 @@ function renderDepartments() {
 function render() {
   if (!capabilitiesReady) return;
   if (!FB_CONFIGURED || !fbAuth) { renderSetupNotice(); return; }
-  if (!S.authReady) {
-    root.innerHTML = '<div id="loading-screen"><div class="spinner"></div><div>กำลังโหลด… / Loading…</div></div>';
-    return;
-  }
+  if (!S.authReady) { root.innerHTML = '<div id="loading-screen"><div class="spinner"></div><div>กำลังโหลด… / Loading…</div></div>'; return; }
   if (!S.user) { renderLogin(); return; }
   if (S.view === "profile" || !S.session) { renderProfile(); return; }
   if (S.view === "form") { renderForm(); return; }
@@ -2003,10 +1638,7 @@ function render() {
    ============================================================ */
 (async function boot() {
   await initCapabilities();
-  if (fbAuth) {
-    subscribeDepartments();
-    startAuthListener();
-  }
+  if (fbAuth) { subscribeDepartments(); startAuthListener(); }
   render();
 })();
 
