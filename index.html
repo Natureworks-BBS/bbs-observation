@@ -134,6 +134,12 @@
   }
   textarea { resize: vertical; min-height: 46px; }
   input:focus, select:focus, textarea:focus, button:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+  .req { color: var(--red); margin-left: 3px; font-weight: 700; }
+  .field-error, textarea.field-error { border-color: var(--red) !important; background: var(--red-bg); }
+  .item-row.row-invalid { background: var(--red-bg); border-radius: var(--radius-s); }
+  .icmt input.field-error { border-color: var(--red); background: var(--red-bg); }
+  .validation-banner { background: var(--red-bg); color: var(--red); border: 1px solid var(--red); border-radius: var(--radius-s); padding: 10px 12px; font-size: 12.5px; font-weight: 600; margin-bottom: 14px; }
+  .validation-banner ul { margin: 6px 0 0; padding-left: 18px; font-weight: 400; }
 
   .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-m); padding: 16px; }
   .section-title { font-family: var(--font-head); font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--steel); margin: 26px 0 10px; }
@@ -448,6 +454,7 @@ const S = {
   observations: [],
   editingObs: null,
   openCats: new Set(),
+  formErrors: null, // { missingFields: Set<string>, missingComments: Set<number>, needsAction: boolean } or null
   dashFilterDept: "",
   dashFilterStatus: "open",
   trackFilterStatus: "all",
@@ -469,6 +476,7 @@ const root = document.getElementById("app");
 const toastEl = document.getElementById("toast");
 function toast(msg) { toastEl.textContent = msg; toastEl.classList.add("show"); clearTimeout(toast._t); toast._t = setTimeout(() => toastEl.classList.remove("show"), 2600); }
 function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
+function errClass(fieldId) { return (S.formErrors && S.formErrors.missingFields && S.formErrors.missingFields.has(fieldId)) ? " field-error" : ""; }
 function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
 function todayISO() { return new Date().toISOString().slice(0, 10); }
 function nowTimeStr() { const d = new Date(); return String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0"); }
@@ -805,6 +813,7 @@ function goto(view, obsToEdit) {
       S.editingObs = newObservationDraft();
     }
     S.openCats = new Set();
+    S.formErrors = null;
   }
   render();
   window.scrollTo(0, 0);
@@ -1044,11 +1053,12 @@ function renderForm() {
         const label = v === "NA" ? "B" : v;
         return `<button type="button" class="${normStatus === v ? "sel-" + v : ""}" data-item="${it.no}" data-val="${v}">${label}</button>`;
       }).join("");
+      const needsComment = S.formErrors && S.formErrors.missingComments && S.formErrors.missingComments.has(it.no);
       return `
-        <div class="item-row">
+        <div class="item-row${needsComment ? " row-invalid" : ""}">
           <div class="itxt"><span class="en">${it.no}. ${esc(it.en)}</span><br><span class="th">${esc(it.th)}</span></div>
           <div class="itog">${seg}</div>
-          <div class="icmt"><input type="text" placeholder="หมายเหตุ / note" data-comment="${it.no}" value="${esc(cur.comment || "")}"></div>
+          <div class="icmt"><input type="text" class="${needsComment ? "field-error" : ""}" placeholder="หมายเหตุ / note (จำเป็นถ้าไม่ปลอดภัย/มีข้อจำกัด)" data-comment="${it.no}" value="${esc(cur.comment || "")}"></div>
         </div>`;
     }).join("");
     return `
@@ -1083,27 +1093,37 @@ function renderForm() {
     <h2>${obs.id ? "แก้ไขรายการสังเกต" : "เริ่มการสังเกตใหม่"}</h2>
     <div style="color:var(--steel);font-size:13px;margin-bottom:16px;">BBS Observation ${obs.id ? "— " + esc(obs.area || "") : ""}</div>
 
+    ${S.formErrors ? `
+    <div class="validation-banner">
+      ⚠️ กรุณาแก้ไขก่อนบันทึก / Please fix before saving:
+      <ul>
+        ${S.formErrors.missingFields && S.formErrors.missingFields.size ? `<li>กรอกข้อมูลให้ครบในช่องที่มี <span class="req">*</span> (ไฮไลต์สีแดงด้านล่าง)</li>` : ``}
+        ${S.formErrors.missingComments && S.formErrors.missingComments.size ? `<li>ใส่หมายเหตุสำหรับข้อที่ติ๊ก Unsafe/Barrier (B) ทุกข้อ (ไฮไลต์สีแดงในรายการตรวจ)</li>` : ``}
+        ${S.formErrors.needsAction ? `<li>พบรายการ Unsafe/Barrier (B) — กรุณาเพิ่ม "มาตรการแก้ไข" อย่างน้อย 1 รายการในส่วน Action Plan ด้านล่าง</li>` : ``}
+      </ul>
+    </div>` : ``}
+
     <div class="section-title">ข้อมูลทั่วไป / General Info</div>
     <div class="card">
       <div class="formgrid">
-        <div><label class="field-label">วันที่ / Date</label><input type="date" id="f_date" value="${esc(obs.date)}"></div>
-        <div><label class="field-label">เวลา / Time</label><input type="text" id="f_time" value="${esc(obs.time)}"></div>
-        <div><label class="field-label">แผนก / Department</label><select id="f_dept"><option value="">— เลือก —</option>${deptOptions}</select></div>
-        <div><label class="field-label">พื้นที่ที่พบ / Area</label>
+        <div><label class="field-label">วันที่ / Date<span class="req">*</span></label><input type="date" id="f_date" class="${errClass("f_date").trim()}" value="${esc(obs.date)}"></div>
+        <div><label class="field-label">เวลา / Time<span class="req">*</span></label><input type="text" id="f_time" class="${errClass("f_time").trim()}" value="${esc(obs.time)}"></div>
+        <div><label class="field-label">แผนก / Department<span class="req">*</span></label><select id="f_dept" class="${errClass("f_dept").trim()}"><option value="">— เลือก —</option>${deptOptions}</select></div>
+        <div><label class="field-label">พื้นที่ที่พบ / Area<span class="req">*</span></label>
           ${S.areas.length === 0 ? `
-            <input type="text" id="f_area" value="${esc(obs.area)}" placeholder="เช่น Line 2, Warehouse A">
+            <input type="text" id="f_area" class="${errClass("f_area").trim()}" value="${esc(obs.area)}" placeholder="เช่น Line 2, Warehouse A">
             <div class="notice" style="margin-top:6px;padding:8px 10px;font-size:11.5px;">ยังไม่มีรายชื่อพื้นที่ในระบบ — แอดมินสามารถเพิ่มได้ที่หน้า "แผนก / Depts"</div>
           ` : `
-            <select id="f_area">
+            <select id="f_area" class="${errClass("f_area").trim()}">
               <option value="">— เลือกพื้นที่ / select —</option>
               ${areaOptionsForm}
               ${areaHasLegacy ? `<option value="${esc(obs.area)}" selected>${esc(obs.area)}</option>` : ``}
             </select>
           `}
         </div>
-        <div><label class="field-label">งานที่สังเกต / Task observed</label><input type="text" id="f_task" value="${esc(obs.taskObserved)}"></div>
+        <div><label class="field-label">งานที่สังเกต / Task observed<span class="req">*</span></label><input type="text" id="f_task" class="${errClass("f_task").trim()}" value="${esc(obs.taskObserved)}"></div>
         <div><label class="field-label">ผู้ถูกสังเกต / Person observed</label><input type="text" id="f_person" value="${esc(obs.personObserved)}"></div>
-        <div><label class="field-label">ผู้สังเกตการณ์ / Observer</label><input type="text" id="f_observer" value="${esc(obs.observerName)}"></div>
+        <div><label class="field-label">ผู้สังเกตการณ์ / Observer<span class="req">*</span></label><input type="text" id="f_observer" class="${errClass("f_observer").trim()}" value="${esc(obs.observerName)}"></div>
         <div>
           <label class="field-label">ประเภท / Type</label>
           <select id="f_type">
@@ -1127,9 +1147,9 @@ function renderForm() {
     </div>
     <div id="catContainer">${catsHtml}</div>
 
-    <div class="section-title">ความเห็นเพิ่มเติม / Overall comments</div>
+    <div class="section-title">ความเห็นเพิ่มเติม / Overall comments<span class="req">*</span></div>
     <div class="card">
-      <textarea id="f_comments" placeholder="ข้อสังเกตโดยรวม / ความเสี่ยงที่พบ และคำชมเชย">${esc(obs.overallComments)}</textarea>
+      <textarea id="f_comments" class="${errClass("f_comments").trim()}" placeholder="ข้อสังเกตโดยรวม / ความเสี่ยงที่พบ และคำชมเชย">${esc(obs.overallComments)}</textarea>
       <div class="formgrid" style="margin-top:12px;">
         <div>
           <label class="field-label">มีการให้คำแนะนำหรือไม่ / Coached?</label>
@@ -1144,7 +1164,7 @@ function renderForm() {
     </div>
 
     <div class="section-title">แผนการดำเนินการแก้ไข / Action Plan</div>
-    <div class="card">
+    <div class="card" style="${S.formErrors && S.formErrors.needsAction ? "border-color:var(--red);" : ""}">
       <table class="apn-table">
         <thead><tr><th>มาตรการแก้ไข / Corrective Action</th><th>ผู้รับผิดชอบ</th><th>วันที่แล้วเสร็จ</th><th>สถานะ</th><th></th></tr></thead>
         <tbody id="apBody">${apRows}</tbody>
@@ -1212,6 +1232,29 @@ function renderForm() {
   wireActionRows(obs);
 }
 
+function validateForm(obs) {
+  const missingFields = new Set();
+  const reqFields = ["f_date", "f_time", "f_dept", "f_area", "f_task", "f_observer", "f_comments"];
+  reqFields.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !(el.value || "").trim()) missingFields.add(id);
+  });
+
+  const missingComments = new Set();
+  ITEMS.forEach(it => {
+    const v = obs.checklist[it.no];
+    if (v && (v.status === "U" || v.status === "B" || v.status === "NA") && !(v.comment || "").trim()) {
+      missingComments.add(it.no);
+    }
+  });
+
+  const hasUnsafeOrBarrier = Object.values(obs.checklist).some(v => v && (v.status === "U" || v.status === "B" || v.status === "NA"));
+  const needsAction = hasUnsafeOrBarrier && !(obs.actionPlan || []).some(a => (a.action || "").trim());
+
+  if (!missingFields.size && !missingComments.size && !needsAction) return null;
+  return { missingFields, missingComments, needsAction };
+}
+
 function wireActionRows(obs) {
   document.querySelectorAll("#apBody tr").forEach(tr => {
     const id = tr.dataset.ap;
@@ -1230,6 +1273,22 @@ function wireActionRows(obs) {
   });
 
   document.getElementById("saveForm").onclick = async () => {
+    const errs = validateForm(obs);
+    if (errs) {
+      S.formErrors = errs;
+      // Expand categories containing items that need a comment, so the user can see them.
+      ITEMS.forEach(it => { if (errs.missingComments.has(it.no)) S.openCats.add(it.catIndex); });
+      render();
+      const parts = [];
+      if (errs.missingFields.size) parts.push("กรอกข้อมูลทั่วไป/ความเห็นเพิ่มเติมให้ครบ");
+      if (errs.missingComments.size) parts.push("ใส่หมายเหตุให้ข้อที่ Unsafe/Barrier");
+      if (errs.needsAction) parts.push("เพิ่มมาตรการแก้ไขอย่างน้อย 1 รายการ");
+      toast("กรุณา: " + parts.join(" / "));
+      const banner = document.querySelector(".validation-banner");
+      if (banner) banner.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    S.formErrors = null;
     const btn = document.getElementById("saveForm");
     btn.disabled = true; btn.textContent = "กำลังบันทึก…";
     try {
