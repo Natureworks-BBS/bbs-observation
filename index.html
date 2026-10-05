@@ -203,7 +203,7 @@
   .obscard .stat { text-align:center; min-width: 38px; }
   .obscard .stat b { display:block; font-size: 16px; font-family: var(--font-head); }
   .obscard .stat span { font-size: 10px; color: var(--steel); }
-  .obscard .editbtn { align-self:center; flex:none; }
+  .obscard .cardactions { align-self:center; flex:none; display:flex; gap:6px; }
 
   /* ---------- Observation form ---------- */
   .formgrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px 16px; }
@@ -665,6 +665,18 @@ async function saveObservation(obs) {
   } catch (e) { toast("บันทึกไม่สำเร็จ: " + fbErr(e)); throw e; }
 }
 
+async function deleteObservation(obsId) {
+  if (!isAdmin()) { toast("เฉพาะแอดมินเท่านั้นที่ลบรายการได้"); return false; }
+  try { await fbDb.collection("observations").doc(obsId).delete(); toast("ลบรายการแล้ว / Observation deleted"); return true; }
+  catch (e) { toast("ลบไม่สำเร็จ: " + fbErr(e)); return false; }
+}
+function confirmDeleteObs(obsId) {
+  const o = S.observations.find(x => x.id === obsId);
+  const label = o ? `${fmtDate(o.date)} • ${o.area || o.taskObserved || "-"} • ${o.observerName || "-"}` : obsId;
+  if (!confirm(`ลบรายการนี้ถาวร?\n${label}\n\nการลบกู้คืนไม่ได้ / This cannot be undone.`)) return Promise.resolve(false);
+  return deleteObservation(obsId);
+}
+
 async function updateActionItemInObs(obsId, actionId, patch) {
   const who = S.session ? S.session.name : "ไม่ทราบชื่อ";
   const stamp = new Date().toISOString();
@@ -994,7 +1006,7 @@ function renderDashboard() {
           <div class="stat"><b style="color:var(--red)">${t.unsafe}</b><span>Unsafe</span></div>
           <div class="stat"><b style="color:${openActions ? "var(--amber-ink)" : "var(--steel)"}">${openActions}</b><span>Actions</span></div>
         </div>
-        <button class="btn small editbtn" data-edit="${esc(o.id)}">แก้ไข</button>
+        <div class="cardactions"><button class="btn small editbtn" data-edit="${esc(o.id)}">แก้ไข</button>${isAdmin() ? `<button class="btn small danger" data-delobs="${esc(o.id)}">ลบ</button>` : ``}</div>
       </div>`;
   }).join("");
 
@@ -1021,6 +1033,7 @@ function renderDashboard() {
   document.getElementById("newObsBtn").onclick = () => { S.editingObs = null; goto("form"); };
   document.querySelectorAll("[data-open]").forEach(c => c.onclick = () => openObsForEdit(c.dataset.open));
   document.querySelectorAll("[data-edit]").forEach(b => b.onclick = e => { e.stopPropagation(); openObsForEdit(b.dataset.edit); });
+  document.querySelectorAll("[data-delobs]").forEach(b => b.onclick = e => { e.stopPropagation(); confirmDeleteObs(b.dataset.delobs); });
 }
 
 function isObsClosed(o) { const ap = o.actionPlan || []; if (ap.length === 0) return true; return ap.every(a => a.status === "done"); }
@@ -1173,6 +1186,7 @@ function renderForm() {
     </div>
 
     <div class="formfoot">
+      ${isAdmin() && obs.id ? `<button class="btn danger" id="deleteForm" style="margin-right:auto;">🗑 ลบรายการนี้ / Delete</button>` : ``}
       <button class="btn" id="cancelForm">ยกเลิก</button>
       <button class="btn primary" id="saveForm">บันทึก / Save</button>
     </div>
@@ -1180,6 +1194,8 @@ function renderForm() {
 
   document.getElementById("backToDash").onclick = () => { S.editingObs = null; goto("dashboard"); };
   document.getElementById("cancelForm").onclick = () => { S.editingObs = null; goto("dashboard"); };
+  const delBtn = document.getElementById("deleteForm");
+  if (delBtn) delBtn.onclick = async () => { if (await confirmDeleteObs(obs.id)) { S.editingObs = null; goto("dashboard"); } };
 
   const bind = (id, field) => {
     const el = document.getElementById(id);
@@ -1504,7 +1520,7 @@ function renderReports() {
         <td style="color:var(--red);font-weight:700;">${t.unsafe}</td>
         <td style="color:var(--steel);font-weight:700;">${t.na}</td>
         <td><span class="pill ${closed ? "green" : "amber"}">${closed ? "ปิดแล้ว" : "เปิดอยู่"}</span></td>
-        <td><button class="btn small" data-editobs2="${esc(o.id)}">แก้ไข</button></td>
+        <td style="white-space:nowrap;"><button class="btn small" data-editobs2="${esc(o.id)}">แก้ไข</button>${isAdmin() ? ` <button class="btn small danger" data-delobs2="${esc(o.id)}">ลบ</button>` : ``}</td>
       </tr>`;
   }).join("");
 
@@ -1571,6 +1587,7 @@ function renderReports() {
   document.getElementById("rArea").onchange = e => { S.reportsArea = e.target.value; render(); };
   document.getElementById("exportXlsx").onclick = () => exportToExcel();
   document.querySelectorAll("[data-editobs2]").forEach(b => b.onclick = () => openObsForEdit(b.dataset.editobs2));
+  document.querySelectorAll("[data-delobs2]").forEach(b => b.onclick = () => confirmDeleteObs(b.dataset.delobs2));
 
   // ---- Charts: pure CSS/HTML (no external chart library, so nothing can fail to load) ----
   const dEl = document.getElementById("donutChart");
