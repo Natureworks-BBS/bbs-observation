@@ -503,6 +503,9 @@ const root = document.getElementById("app");
 const toastEl = document.getElementById("toast");
 function toast(msg) { toastEl.textContent = msg; toastEl.classList.add("show"); clearTimeout(toast._t); toast._t = setTimeout(() => toastEl.classList.remove("show"), 2600); }
 function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
+// "Other" department: the observer types the real department in a free-text box.
+function isOtherDept(name) { return /^\s*(others?\b|อื่น)/i.test(String(name || "")) || /อื่น ?ๆ/.test(String(name || "")); }
+function deptLabel(o) { if (!o) return ""; const d = o.department || ""; return (isOtherDept(d) && (o.departmentOther || "").trim()) ? d + ": " + o.departmentOther.trim() : d; }
 function errClass(fieldId) { return (S.formErrors && S.formErrors.missingFields && S.formErrors.missingFields.has(fieldId)) ? " field-error" : ""; }
 function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
 function todayISO() { return new Date().toISOString().slice(0, 10); }
@@ -562,7 +565,7 @@ function subscribeDepartments() {
   unsubDept = fbDb.collection("departments").onSnapshot(
     snap => {
       S.departments = snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }))
-        .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+        .sort((a, b) => (a.name || "").localeCompare(b.name || "", undefined, { numeric: true, sensitivity: "base" }));
       render();
     },
     err => console.warn("departments listener:", err)
@@ -602,7 +605,7 @@ function subscribeAreas() {
   unsubArea = fbDb.collection("areas").onSnapshot(
     snap => {
       S.areas = snap.docs.map(d => ({ id: d.id, ...(d.data() || {}) }))
-        .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+        .sort((a, b) => (a.name || "").localeCompare(b.name || "", undefined, { numeric: true, sensitivity: "base" }));
       render();
     },
     err => console.warn("areas listener:", err)
@@ -1026,7 +1029,7 @@ function renderDashboard() {
           <div class="row1">
             <span class="title">${esc(o.area || o.taskObserved || "ไม่มีชื่อพื้นที่")}</span>
             <span class="pill ${closed ? "green" : "amber"}">${closed ? "ปิดงานแล้ว" : "เปิดอยู่"}</span>
-            ${o.department ? `<span class="pill blue">${esc(o.department)}</span>` : ``}
+            ${o.department ? `<span class="pill blue">${esc(deptLabel(o))}</span>` : ``}
             ${o.area ? `<span class="pill grey">📍 ${esc(o.area)}</span>` : ``}
           </div>
           <div class="meta">${fmtDate(o.date)} • ผู้สังเกต: ${esc(o.observerName || "-")}${o.taskObserved ? " • " + esc(o.taskObserved) : ""}</div>
@@ -1152,7 +1155,8 @@ function renderForm() {
       <div class="formgrid">
         <div><label class="field-label">วันที่ / Date<span class="req">*</span></label><input type="date" id="f_date" class="${errClass("f_date").trim()}" value="${esc(obs.date)}"></div>
         <div><label class="field-label">เวลา / Time<span class="req">*</span></label><input type="text" id="f_time" class="${errClass("f_time").trim()}" value="${esc(obs.time)}"></div>
-        <div><label class="field-label">แผนก / Department<span class="req">*</span></label><select id="f_dept" class="${errClass("f_dept").trim()}"><option value="">— เลือก —</option>${deptOptions}</select></div>
+        <div><label class="field-label">แผนก / Department<span class="req">*</span></label><select id="f_dept" class="${errClass("f_dept").trim()}"><option value="">— เลือก —</option>${deptOptions}</select>
+          ${isOtherDept(obs.department) ? `<input type="text" id="f_dept_other" class="${errClass("f_dept_other").trim()}" style="margin-top:6px;" value="${esc(obs.departmentOther || "")}" placeholder="ระบุแผนก / Please specify department">` : ``}</div>
         <div><label class="field-label">พื้นที่ที่พบ / Area<span class="req">*</span></label>
           ${S.areas.length === 0 ? `
             <input type="text" id="f_area" class="${errClass("f_area").trim()}" value="${esc(obs.area)}" placeholder="เช่น Line 2, Warehouse A">
@@ -1234,7 +1238,13 @@ function renderForm() {
     const h = () => { obs[field] = el.value; };
     el.addEventListener("input", h); el.addEventListener("change", h);
   };
-  bind("f_date", "date"); bind("f_time", "time"); bind("f_dept", "department");
+  bind("f_date", "date"); bind("f_time", "time"); bind("f_dept", "department"); bind("f_dept_other", "departmentOther");
+  const deptSel = document.getElementById("f_dept");
+  if (deptSel) deptSel.addEventListener("change", () => {
+    const wasOther = !!document.getElementById("f_dept_other");
+    if (!isOtherDept(obs.department)) obs.departmentOther = "";
+    if (wasOther !== isOtherDept(obs.department)) { render(); const o = document.getElementById("f_dept_other"); if (o) o.focus(); }
+  });
   bind("f_area", "area"); bind("f_task", "taskObserved"); bind("f_person", "personObserved");
   bind("f_observer", "observerName"); bind("f_type", "obsType");
   bind("f_comments", "overallComments"); bind("f_coached", "coached"); bind("f_followup", "followUpDueDate");
@@ -1281,7 +1291,7 @@ function renderForm() {
 
 function validateForm(obs) {
   const missingFields = new Set();
-  const reqFields = ["f_date", "f_time", "f_dept", "f_area", "f_task", "f_observer", "f_comments"];
+  const reqFields = ["f_date", "f_time", "f_dept", "f_dept_other", "f_area", "f_task", "f_observer", "f_comments"];
   reqFields.forEach(id => {
     const el = document.getElementById(id);
     if (el && !(el.value || "").trim()) missingFields.add(id);
@@ -1377,7 +1387,7 @@ function renderTracker() {
     <tr>
       <td>
         <div style="font-weight:600;">${esc(a.action || "(ไม่มีรายละเอียด)")}</div>
-        <div style="font-size:11.5px;color:var(--steel);">${esc(obs.department || "-")} • ${esc(obs.area || "-")} • ${fmtDate(obs.date)}
+        <div style="font-size:11.5px;color:var(--steel);">${esc(deptLabel(obs) || "-")} • ${esc(obs.area || "-")} • ${fmtDate(obs.date)}
           <button class="btn small ghost" style="padding:1px 6px;margin-left:4px;" data-editobs="${esc(obs.id)}">แก้ไข</button>
         </div>
       </td>
@@ -1544,7 +1554,7 @@ function renderReports() {
     return `
       <tr>
         <td>${fmtDate(o.date)}</td>
-        <td>${esc(o.department || "-")}</td>
+        <td>${esc(deptLabel(o) || "-")}</td>
         <td>${esc(o.area || "-")}</td>
         <td>${esc(o.observerName || "-")}</td>
         <td style="color:var(--green);font-weight:700;">${t.safe}</td>
@@ -1659,19 +1669,19 @@ async function exportToExcel() {
       .sort((a, b) => b.count - a.count)
       .forEach((r, i) => { const it = ITEMS.find(x => x.no === r.no); rankAoA.push([i + 1, it.no, it.en, it.th, CATS[it.catIndex][0], r.count]); });
 
-    const obsAoA = [["ID", "วันที่", "แผนก", "พื้นที่", "งานที่สังเกต", "ผู้สังเกต", "ผู้ถูกสังเกต", "ประเภท", "Safe", "Unsafe", "Barriers (B)", "Coached", "Follow-up Due", "ความเห็น"]];
+    const obsAoA = [["ID", "วันที่", "แผนก", "พื้นที่", "งานที่สังเกต", "ผู้สังเกต", "ผู้ถูกสังเกต", "ประเภท", "Safe", "Unsafe", "Barriers (B)", "Coached", "Follow-up Due", "ความเห็น", "แผนกที่ระบุ (Other)"]];
     S.observations.forEach(o => {
       const t = o.totals || computeTotals(o.checklist);
-      obsAoA.push([o.id || "", o.date || "", o.department || "", o.area || "", o.taskObserved || "", o.observerName || "", o.personObserved || "", o.obsType || "", t.safe, t.unsafe, t.na, o.coached || "", o.followUpDueDate || "", o.overallComments || ""]);
+      obsAoA.push([o.id || "", o.date || "", o.department || "", o.area || "", o.taskObserved || "", o.observerName || "", o.personObserved || "", o.obsType || "", t.safe, t.unsafe, t.na, o.coached || "", o.followUpDueDate || "", o.overallComments || "", o.departmentOther || ""]);
     });
 
-    const detailAoA = [["Observation ID", "วันที่", "แผนก", "พื้นที่", "ข้อที่", "หัวข้อ (EN)", "หัวข้อ (TH)", "สถานะ", "หมายเหตุ"]];
+    const detailAoA = [["Observation ID", "วันที่", "แผนก", "พื้นที่", "ข้อที่", "หัวข้อ (EN)", "หัวข้อ (TH)", "สถานะ", "หมายเหตุ", "แผนกที่ระบุ (Other)"]];
     S.observations.forEach(o => {
       ITEMS.forEach(it => {
         const v = o.checklist && o.checklist[it.no];
         if (v && v.status) {
           const st = v.status === "B" ? "B (Barrier)" : v.status === "NA" ? "B (Barrier)" : v.status;
-          detailAoA.push([o.id || "", o.date || "", o.department || "", o.area || "", it.no, it.en, it.th, st, v.comment || ""]);
+          detailAoA.push([o.id || "", o.date || "", o.department || "", o.area || "", it.no, it.en, it.th, st, v.comment || "", o.departmentOther || ""]);
         }
       });
     });
@@ -1993,6 +2003,135 @@ function render() {
   render();
 })();
 
+// Expose a few things for the language toggle script below.
+window.__bbs = { CATS, ITEMS, render };
+})();
+</script>
+
+<script>
+/* ============================================================
+   LANGUAGE TOGGLE (TH | EN)
+   - TH = original UI. EN = translated on the fly after each render.
+   - Data saved to Firebase is NOT affected (same codes in both languages).
+   ============================================================ */
+(function () {
+  const DICT = {"&larr; กลับหน้าเข้าสู่ระบบ": "← Back to sign in", "← กลับหน้าเข้าสู่ระบบ": "← Back to sign in", "(ชื่อนี้จะขึ้นในรายงานว่าใครเป็นผู้ส่ง)": "(This name appears in reports as the submitter)", "(ตลอดเวลา)": "(All-time)", "(ภายใน 3 วัน)": "(within 3 days)", "(ไม่มีรายละเอียด)": "(no details)", "(ไม่ระบุ)": "(not specified)", "(ไม่ระบุชื่อ)": "(no name)", "(ไม่ระบุพื้นที่)": "(no area)", "(ไม่ระบุแผนก)": "(no department)", "(ไฮไลต์สีแดงด้านล่าง)": "(highlighted in red below)", "+ เพิ่มมาตรการ": "+ Add action", "1 สมัคร/เข้าสู่ระบบ": "1 Register / Sign in", "10 หัวข้อที่พบ": "Top 10 items found", "2 ตั้งค่าโปรไฟล์": "2 Set up profile", "3 เริ่มสังเกตใหม่": "3 New observation", "4 ข้อมูลทั่วไป": "4 General info", "5 ตรวจ 90 ข้อ": "5 Check 90 items", "6 หมายเหตุ+มาตรการ": "6 Notes + actions", "7 บันทึก": "7 Save", "8 ติดตามแก้ไข": "8 Track actions", "9 รายงาน": "9 Reports", ": กรองตามเดือน / แผนก / พื้นที่": ": filter by month / department / area", "B (Barriers) ต่างจาก U อย่างไร?": "How is B (Barriers) different from U?", "BBS Observation — ระบบสังเกตพฤติกรรมความปลอดภัย": "BBS Observation — Behavior-Based Safety System", "Reports — จำนวน BBS ต่อแผนกต่อเดือน พื้นที่ที่พบ และหัวข้อที่พบไม่ปลอดภัยมากที่สุด": "Reports — BBS count per department per month, areas, and most frequent unsafe items", "U ข้อ": "U items", "U คือพบการกระทำ/สภาพที่ไม่ปลอดภัย ส่วน B คือผู้ปฏิบัติงานต้องการทำอย่างปลอดภัยแต่มีข้อจำกัดที่ทำให้ทำไม่ได้ (เช่น ไม่มีอุปกรณ์) ทั้งสองต้องมีหมายเหตุและมาตรการแก้ไข": "U means an unsafe act/condition was found. B means the worker wanted to work safely but a barrier prevented it (e.g. no equipment). Both require a note and a corrective action.", "กฎบังคับ:": "Required:", "กด": "press", "กดบันทึกแล้วไม่ผ่าน ทำไม?": "Why can't I save?", "กดเมนู": "Open the menu", "กดแท็บ": "Click the tab", "กรอก": "fill in", "กรอกข้อมูลทั่วไป": "Fill in general info", "กรอกข้อมูลทั่วไป/ความเห็นเพิ่มเติมให้ครบ": "Complete the general info / overall comments", "กรอกข้อมูลให้ครบในช่องที่มี": "Fill in all fields marked", "กรอกผิดไปแล้ว แก้ได้ไหม?": "I made a mistake — can I edit it?", "กรอกอีเมล+รหัสผ่าน →": "Enter email + password →", "กรอกอีเมลก่อน แล้วกด": "Enter your email first, then press", "กรุณา:": "Please:", "กรุณากรอกชื่อ": "Please enter a name", "กรุณากรอกชื่อ-นามสกุล": "Please enter your full name", "กรุณากรอกชื่อพื้นที่": "Please enter an area name", "กรุณากรอกชื่อแผนก": "Please enter a department name", "กรุณากรอกอีเมลและรหัสผ่าน": "Please enter email and password", "กรุณาเลือกแผนก": "Please select a department", "กำลังทำ": "In progress", "กำลังบันทึก…": "Saving…", "กำลังสร้างไฟล์…": "Creating file…", "ขยาย/ย่อ": "expand/collapse", "ขยายทั้งหมด": "Expand all", "ของคุณจากรายการ → กด": "from the list → press", "ข้อจำกัด — อยากทำให้ปลอดภัยแต่ทำไม่ได้ เช่น ไม่มีอุปกรณ์ พื้นที่แคบ ขาดเครื่องมือ": "Barrier — wants to work safely but can't, e.g. no equipment, tight space, missing tools", "ข้อที่": "Item no.", "ข้อที่ตรวจ": "Items checked", "ข้อที่ไม่ได้สังเกตต้องกดอะไร?": "What do I press for items I didn't observe?", "ข้อมูลผู้ใช้งาน": "User info", "ข้อมูลใช้ร่วมกันทุกคน (Firebase)": "Data shared by everyone (Firebase)", "ข้อสังเกตโดยรวม / ความเสี่ยงที่พบ และคำชมเชย": "Overall observations / risks found and praise", "ข้อใด ต้องทำ 2 อย่างจึงจะบันทึกได้": "item, you must do 2 things before saving", "ครั้ง": "times", "ครั้งแรก:": "First time:", "ความเห็น": "Comments", "ความเห็นเพิ่มเติม": "Overall comments", "งานที่สังเกต": "Task observed", "จัดการรายชื่อแผนกและพื้นที่ที่ใช้ในระบบ (คุณเป็นแอดมิน)": "Manage the departments and areas used in the system (you are an admin)", "จำนวน BBS ที่ส่งต่อแผนก": "BBS submitted per department", "จำนวนครั้งที่ Unsafe": "Unsafe count", "จึงจะบันทึกได้": "before you can save", "ชื่อคุณ (ใส่ให้อัตโนมัติ)": "Your name (auto-filled)", "ชื่อผู้สังเกตการณ์": "Observer name", "ชื่อพื้นที่ (EN)": "Area name (EN)", "ชื่อพื้นที่ (TH)": "Area name (TH)", "ชื่อแผนก (EN)": "Department name (EN)", "ชื่อแผนก (TH)": "Department name (TH)", "ช่อง": "field", "ช่องที่มี": "fields marked", "ดาวน์โหลดข้อมูลทั้งหมดเป็นไฟล์ .xlsx": "Download all data as .xlsx", "ดำเนินการต่อด้วย Google": "Continue with Google", "ดูกล่องสีแดงด้านบนฟอร์ม: ช่องที่มี * ยังว่าง, ข้อ U/B ยังไม่มีหมายเหตุ หรือยังไม่ได้เพิ่มมาตรการแก้ไข": "Check the red box at the top of the form: a * field is empty, a U/B item has no note, or no corrective action has been added", "ดูจำนวน BBS ที่ส่งต่อแผนก กราฟ Safe/Unsafe/B หัวข้อที่พบไม่ปลอดภัยมากที่สุด และรายชื่อผู้ส่ง": "See BBS count per department, Safe/Unsafe/B charts, the most frequent unsafe items and the list of submitters", "ดูรายงานสรุป": "View reports", "ตรวจรายการ 90 ข้อ": "Check the 90 items", "ตัวอย่างที่ดี:": "Good example:", "ตั้งค่าโปรไฟล์ (ทำครั้งเดียว)": "Set up profile (one time)", "ติดตามการแก้ไข": "Action tracking", "ต้องกรอก": "required", "ถามตอบ": "FAQ", "ถ้ามีข้อมูลไม่ครบ จะมีกล่องสีแดงด้านบนบอกสิ่งที่ต้องแก้ และไฮไลต์ช่องที่ขาด — แก้แล้วกดบันทึกอีกครั้ง": "If something is missing, a red box at the top lists what to fix and highlights the missing fields — fix them and save again", "ถ้าเลือก": "If you select", "ถ้าใช้ Gmail": "If you use Gmail", "ทั้งหมด": "All", "ทางซ้าย (บนมือถือกดปุ่ม ☰ ก่อน) หรือปุ่มสีเหลืองในหน้า Dashboard": "on the left (on mobile press ☰ first) or the yellow button on the Dashboard", "ที่การ์ดใน Dashboard / ตารางรายงาน": "on a Dashboard card / report table", "ที่รายการใน Dashboard หรือตารางรายงาน แล้วบันทึกใหม่ ส่วนการลบ แอดมินเท่านั้นที่ทำได้": "on the item in the Dashboard or report table, then save again. Only admins can delete.", "ท้ายฟอร์ม": "at the end of the form", "บันทึก": "Save", "บันทึกสำเร็จจะกลับหน้า Dashboard และทุกคนเห็นรายการร่วมกันทันที": "After saving you return to the Dashboard and everyone sees the record immediately", "บันทึกและเข้าใช้งาน": "Save and continue", "บันทึกไม่สำเร็จ:": "Save failed:", "ประเภท": "Type", "ปลอดภัย — ทำถูกต้องตามมาตรฐาน": "Safe — done correctly to standard", "ปลอดภัย": "Safe", "ปล่อยว่างได้": "can be left blank", "ปล่อยว่างได้ ไม่ต้องกด S/U/B ทุกข้อ": "Leave them blank — you don't need to press S/U/B for every item", "ปิดงานแล้ว": "Closed", "ปิดหน้าต่างล็อกอินก่อนเสร็จสิ้น": "Sign-in window was closed before finishing", "ปิดแล้ว": "Closed", "ปุ่ม": "button", "ผู้ถูกสังเกต": "Person observed", "ผู้รับผิดชอบ": "Responsible", "ผู้รับผิดชอบเปลี่ยนสถานะ": "The responsible person changes the status", "ผู้สังเกต": "Observer", "ผู้สังเกตการณ์": "Observer", "พบรายการ Unsafe/Barrier (B) — กรุณาเพิ่ม": "Unsafe/Barrier (B) items found — please add", "พิมพ์": "Print", "พิมพ์สั้น ๆ เช่น": "Type briefly, e.g.", "พื้นที่": "Area", "พื้นที่ที่พบ": "Area", "ฟอร์มมี 4 ส่วน: ข้อมูลทั่วไป → รายการตรวจ 90 ข้อ → ความเห็นเพิ่มเติม → Action Plan": "The form has 4 parts: General info → 90-item checklist → Overall comments → Action Plan", "ภาพรวมการสังเกต": "Observation overview", "มากที่สุด (เรียงจากมากไปน้อย)": "most often (highest first)", "มาตรการแก้ไข": "Corrective action", "มีพื้นที่นี้อยู่แล้ว": "This area already exists", "มีแผนกนี้อยู่แล้ว": "This department already exists", "ยกของด้วยรถโฟล์คลิฟท์": "Lifting with a forklift", "ยกเลิก": "Cancel", "ยังไม่มีข้อมูลในช่วงที่เลือก": "No data for the selected period yet", "ยังไม่มีพื้นที่ เพิ่มพื้นที่แรกของคุณด้านบน": "No areas yet — add your first area above", "ยังไม่มีพื้นที่ในระบบ กรุณาติดต่อแอดมิน": "No areas in the system — please contact an admin", "ยังไม่มีรายการสังเกต ลองเริ่มรายการแรกของคุณ": "No observations yet — start your first one", "ยังไม่มีรายชื่อพื้นที่ในระบบ — แอดมินสามารถเพิ่มได้ที่หน้า": "No area list yet — admins can add areas on the page", "ยังไม่มีรายชื่อแผนกในระบบ กรุณาติดต่อแอดมินให้เพิ่มแผนกก่อน": "No departments in the system yet — please ask an admin to add one first", "ยังไม่มีแผนก เพิ่มแผนกแรกของคุณด้านบน": "No departments yet — add your first department above", "ยังไม่มีแผนกในระบบ กรุณาติดต่อแอดมิน": "No departments in the system — please contact an admin", "ยังไม่ได้ตั้งค่า Firebase": "Firebase is not configured yet", "ยังไม่ได้เปิดวิธีล็อกอินนี้ใน Firebase Console": "This sign-in method is not enabled in the Firebase Console", "ย่อทั้งหมด": "Collapse all", "รวมมาตรการทุกรายการ กรองตามสถานะ/แผนกได้": "All actions in one place, filter by status/department", "รหัสข้อ": "Item code", "รหัสผ่านสั้นเกินไป (อย่างน้อย 6 ตัวอักษร)": "Password too short (at least 6 characters)", "รหัสผ่านไม่ถูกต้อง": "Incorrect password", "ระบบ BBS Observation — ตั้งแต่สมัครสมาชิกจนถึงบันทึกการสังเกตและติดตามการแก้ไข ใช้เวลาอ่านประมาณ 5 นาที": "BBS Observation — from registering to saving an observation and tracking actions. About a 5-minute read.", "ระบบจะส่งลิงก์ตั้งรหัสใหม่ไปที่อีเมล": "a password reset link will be sent to your email", "ระบบสังเกตพฤติกรรมความปลอดภัย": "Behavior-Based Safety Observation", "ระบบใส่เวลาปัจจุบันให้ แก้ได้ถ้าสังเกตไว้ก่อนหน้า": "Current time is filled in; change it if you observed earlier", "รายการ": "items", "รายการ (ภายใน 3 วัน)": "items (within 3 days)", "รายการที่มาตรการเสร็จครบทุกข้อจะขึ้นสถานะ": "Records whose actions are all done show the status", "รายการสังเกต": "Observations", "รายการสังเกตทั้งหมด": "All observations", "รายการแบ่งเป็น 26 หมวด กดที่ชื่อหมวดเพื่อ": "Items are grouped into 26 categories; click a category name to", "รายงานสรุป": "Reports", "รายชื่อแผนกและพื้นที่นี้กำหนดโดยผู้ดูแลระบบ หากต้องการเพิ่ม/แก้ไข กรุณาติดต่อแอดมิน": "Departments and areas are set by the administrator. To add or edit, please contact an admin.", "รายบุคคล หรือ กลุ่ม": "Individual or Group", "รายละเอียด Checklist": "Checklist details", "รายละเอียดอันดับ": "Ranking details", "รูปแบบอีเมลไม่ถูกต้อง": "Invalid email format", "ลบ": "Delete", "ลบพื้นที่": "Delete area", "ลบพื้นที่แล้ว": "Area deleted", "ลบรายการนี้ถาวร?": "Permanently delete this record?", "ลบแผนก": "Delete department", "ลบแผนกแล้ว": "Department deleted", "ลบไม่สำเร็จ:": "Delete failed:", "ลองผิดหลายครั้งเกินไป กรุณารอสักครู่": "Too many attempts, please wait a moment", "ลืมรหัสผ่าน": "Forgot password", "ลืมรหัสผ่าน: กรอกอีเมล แล้วกด": "Forgot password: enter your email, then press", "ลืมรหัสผ่าน?": "Forgot password?", "วันครบกำหนด": "Due date", "วันที่": "Date", "วันที่ / เวลา": "Date / Time", "วันที่แล้วเสร็จ": "Completed date", "วิธีกรอก": "How to fill in", "สถานะ": "Status", "สมัครสมาชิก": "Register", "สมัครสมาชิก / เข้าสู่ระบบ": "Register / Sign in", "สรุปแผนกxเดือน": "Dept x Month", "สีแดง": "red", "ส่งลิงก์ตั้งรหัสผ่านใหม่ไปที่อีเมลแล้ว": "Password reset link sent to your email", "ส่วน": "section", "หมวดหมู่": "Category", "หมายเหตุ": "Note", "หมายเหตุ / note (จำเป็นถ้าไม่ปลอดภัย/มีข้อจำกัด)": "Note (required if Unsafe/Barrier)", "หมายเหตุ และมาตรการแก้ไข (สำคัญ)": "Notes and corrective actions (important)", "หรือ": "or", "หรือกด": "or press", "หัวข้อ (EN)": "Item (EN)", "หัวข้อ (TH)": "Item (TH)", "อย่างน้อย 1 รายการใน Action Plan ด้านล่างฟอร์ม: กด": "at least 1 item in the Action Plan at the bottom of the form: press", "อย่างน้อย 1 รายการในส่วน Action Plan ด้านล่าง": "at least 1 item in the Action Plan section below", "ออกจากระบบ": "Sign out", "อันดับ": "Rank", "อันดับหัวข้อ Unsafe": "Unsafe item ranking", "อัปเดตสถานะ": "Update status", "อัปเดตไม่สำเร็จ:": "Update failed:", "อีเมลนี้ถูกใช้สมัครแล้ว": "This email is already registered", "อีเมลหรือรหัสผ่านไม่ถูกต้อง": "Incorrect email or password", "เกินกำหนด": "Overdue", "เข้าสู่ระบบ": "Sign in", "เคยสมัครแล้ว:": "Already registered:", "เฉพาะแอดมินเท่านั้นที่ลบรายการได้": "Only admins can delete records", "เฉพาะแอดมินเท่านั้นที่ลบได้": "Only admins can delete", "เฉพาะแอดมินเท่านั้นที่เพิ่มพื้นที่ได้": "Only admins can add areas", "เฉพาะแอดมินเท่านั้นที่เพิ่มแผนกได้": "Only admins can add departments", "เฉพาะแอดมินเท่านั้นที่แก้ไขได้": "Only admins can edit", "เชื่อมต่ออินเทอร์เน็ตไม่ได้": "No internet connection", "เช่น Line 2, Warehouse A": "e.g. Line 2, Warehouse A", "เช่น คลังสินค้า A": "e.g. Warehouse A (Thai name)", "เช่น ซ่อมบำรุง": "e.g. Maintenance (Thai name)", "เปลี่ยนแผนกของฉัน": "Change my department", "เปลี่ยนแผนกภายหลังได้ที่เมนู": "You can change your department later in the menu", "เปิด": "Open", "เปิด → กำลังทำ → เสร็จสิ้น": "Open → In progress → Done", "เปิดลิงก์ของระบบที่ได้รับ (ใช้ได้ทั้งมือถือและคอมพิวเตอร์)": "Open the system link you received (works on phone and computer)", "เปิดอยู่": "Open", "เปิดไฟล์": "Open file", "เพิ่ม": "Add", "เพิ่มพื้นที่ไม่สำเร็จ:": "Failed to add area:", "เพิ่มมาตรการแก้ไขอย่างน้อย 1 รายการ": "Add at least 1 corrective action", "เพิ่มแผนกไม่สำเร็จ:": "Failed to add department:", "เพิ่มให้ — ผู้ใช้ทั่วไปเพิ่มแผนกเองไม่ได้": "to add it — regular users cannot add departments", "เมนู": "menu", "เมื่อดำเนินการ ระบบบันทึกว่าใครแก้เมื่อไร": "as work progresses; the system records who changed it and when", "เริ่มการสังเกตใหม่": "Start a new observation", "เลือก": "Select", "เลือกจากรายการที่แอดมินตั้งไว้": "Choose from the list set by the admin", "เสร็จสิ้น": "Done", "แก้ไข": "Edit", "แก้ไขพื้นที่แล้ว": "Area updated", "แก้ไขรายการสังเกต": "Edit observation", "แก้ไขรายการเดิมได้โดยกด": "You can edit a record by pressing", "แก้ไขล่าสุดเมื่อ": "Last updated at", "แก้ไขล่าสุดโดย": "Last updated by", "แก้ไขแผนกแล้ว": "Department updated", "แก้ไขไม่สำเร็จ:": "Edit failed:", "แจ้งเตือนและแจกถุงมือเพิ่ม / หัวหน้างาน / ภายใน 3 วัน": "Remind and issue more gloves / Supervisor / within 3 days", "แต่ละข้อกด 1 ใน 3 ปุ่ม (กดซ้ำเพื่อยกเลิก) — ข้อที่ไม่เกี่ยวข้อง/ไม่ได้สังเกต": "For each item press 1 of 3 buttons (press again to clear) — items not relevant / not observed", "แถบเตือนด้านบนบอกจำนวนที่": "The banner at the top shows how many are", "แผนก": "Department", "แผนก (TH)": "Department (TH)", "แผนก/พื้นที่": "Depts/Areas", "แผนกที่ระบุ (Other)": "Specified department (Other)", "แผนกและพื้นที่กำหนดโดยแอดมิน กรุณาแจ้งแอดมินให้เพิ่ม แล้วรีเฟรชหน้าเว็บ": "Departments and areas are set by admins. Ask an admin to add yours, then refresh the page.", "และใกล้ครบกำหนด": "and due soon", "แล้วกรอก": "then fill in", "แล้วใส่ค่า config จาก Firebase Console (Project settings → Your apps → Web app) จากนั้นอัปโหลดขึ้น GitHub ใหม่ ขั้นตอนละเอียดอยู่ในไฟล์ README.md": "and enter the config from the Firebase Console (Project settings → Your apps → Web app), then upload to GitHub again. Detailed steps are in README.md", "แอดมิน": "admin", "โดย": "by", "โดเมนนี้ยังไม่ได้เพิ่มใน Firebase": "This domain has not been added in Firebase", "โหลด Firebase SDK ไม่สำเร็จ — ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต": "Failed to load Firebase SDK — check your internet connection", "โหลดข้อมูลไม่สำเร็จ:": "Failed to load data:", "ใกล้ครบกำหนด": "Due soon", "ใช่หรือไม่?": "?", "ใช้บนมือถือได้ไหม?": "Can I use it on a phone?", "ใช้อุปกรณ์ป้องกันส่วนบุคคล": "Using personal protective equipment", "ในช่องข้างข้อนั้น — อธิบายว่าเห็นอะไร (แถวจะไฮไลต์แดงจนกว่าจะกรอก)": "in the box next to that item — describe what you saw (the row stays red until filled)", "ใส่ตามแผนกของคุณให้อัตโนมัติ — เปลี่ยนได้ถ้าสังเกตแผนกอื่น": "Auto-filled with your department — change it if you observed another department", "ใส่ภาพรวม เช่น ข้อสังเกตทั้งหมด ความเสี่ยง และคำชมเชย และเลือกว่าได้ให้คำแนะนำ (Coached) แล้วหรือไม่": "Write an overview, e.g. all observations, risks and praise, and select whether you coached the person", "ใส่หมายเหตุสำหรับข้อที่ติ๊ก Unsafe/Barrier (B) ทุกข้อ (ไฮไลต์สีแดงในรายการตรวจ)": "Add a note for every item marked Unsafe/Barrier (B) (highlighted red in the checklist)", "ใส่หมายเหตุให้ข้อที่ Unsafe/Barrier": "Add notes for Unsafe/Barrier items", "ได้ กด": "Yes, press", "ได้ เปิดลิงก์ในเบราว์เซอร์ กดปุ่ม ☰ มุมซ้ายบนเพื่อเปิดเมนู": "Yes. Open the link in a browser and press ☰ at the top left to open the menu", "ไปที่หน้าติดตามแก้ไข": "Go to action tracking", "ไม่ทราบชื่อ": "Unknown", "ไม่บังคับ — ชื่อผู้ปฏิบัติงานที่สังเกต": "Optional — name of the worker observed", "ไม่ปลอดภัย": "Unsafe", "ไม่ปลอดภัย — พบพฤติกรรม/สภาพที่เสี่ยง": "Unsafe — risky behavior/condition found", "ไม่พบข้อมูล Unsafe ในช่วงที่เลือก": "No Unsafe data for the selected period", "ไม่พบบัญชีนี้": "Account not found", "ไม่พบรายการแก้ไขในเงื่อนไขนี้": "No actions match these filters", "ไม่มีข้อมูลในช่วงที่เลือก": "No data for the selected period", "ไม่มีชื่อพื้นที่": "No area name", "ไม่มีรายการในช่วงที่เลือก": "No records for the selected period", "ไม่มีสิทธิ์ทำรายการนี้ (ตรวจสอบ Firestore Rules หรือสิทธิ์แอดมิน)": "Permission denied (check Firestore Rules or admin rights)", "ไม่สวมถุงมือขณะตัดเหล็ก": "Not wearing gloves while cutting steel", "ไม่สามารถโหลดไลบรารี Excel ได้": "Could not load the Excel library", "ไม่เห็นแผนก/พื้นที่ของฉัน": "I can't see my department/area", "— กำหนดเสร็จเมื่อไร (ระบบจะเตือนเมื่อใกล้ครบ/เกินกำหนด)": "— when it is due (the system warns when due soon/overdue)", "— ต้องทำอะไร": "— what needs to be done", "— พื้นที่:": "— Area:", "— ยังไม่ระบุ —": "— not specified —", "— ระบุชื่อและแผนกของคุณ": "— enter your name and department", "— เลือก —": "— Select —", "— ใครทำ": "— who does it", "• ผู้สังเกต:": "• Observer:", "→ กรอก ชื่อ-นามสกุล, อีเมล, รหัสผ่าน (อย่างน้อย 6 ตัวอักษร) → กด": "→ enter full name, email, password (at least 6 characters) → press", "→ มาตรการ": "→ action", "→ หมายเหตุ": "→ note", "⏰ ใกล้ครบกำหนด": "⏰ Due soon", "⚠️ ถ้าไม่เห็นแผนกของคุณในรายการ ให้แจ้ง": "⚠️ If you can't see your department in the list, ask an", "⚠️ เกินกำหนด": "⚠️ Overdue", "👁️ คุณกำลังดูในโหมดอ่านอย่างเดียว — เฉพาะแอดมินเท่านั้นที่เพิ่ม/แก้ไข/ลบพื้นที่ได้": "👁️ Read-only view — only admins can add/edit/delete areas", "👁️ คุณกำลังดูในโหมดอ่านอย่างเดียว — เฉพาะแอดมินเท่านั้นที่เพิ่ม/แก้ไข/ลบแผนกได้": "👁️ Read-only view — only admins can add/edit/delete departments", "💡 ลบรายการได้เฉพาะแอดมิน ถ้ากรอกผิดและต้องลบ ให้แจ้งแอดมิน": "💡 Only admins can delete records. If you need one deleted, contact an admin.", "💡 สรุปจำนวน Safe / Unsafe / B แสดงสดเหนือรายการตรวจ ตรวจดูก่อนบันทึกได้": "💡 Live Safe / Unsafe / B totals are shown above the checklist — check them before saving", "💡 ใช้อีเมลจริงที่เข้าถึงได้ เพื่อกู้รหัสผ่านได้เมื่อจำเป็น": "💡 Use a real email you can access so you can reset your password if needed", "📘 ดูคู่มือการใช้งาน": "📘 View user guide", "ลบรายการนี้ถาวร": "Permanently delete this record", "การลบกู้คืนไม่ได้": "This cannot be undone", "ไม่ปลอดภัย\" มากที่สุด": "Unsafe\" most often"};
+  const TH_RE = /[\u0E00-\u0E7F]/;
+  let LANG = "th";
+  try { LANG = localStorage.getItem("bbs_lang") === "en" ? "en" : "th"; } catch (e) {}
+  window.getLang = () => LANG;
+
+  let _k = null;
+  function keys() {
+    if (_k) return _k;
+    const map = Object.assign({}, DICT);
+    try { window.__bbs.CATS.forEach(c => { if (c[1]) map[c[1]] = c[0]; }); } catch (e) {}
+    try { window.__bbs.ITEMS.forEach(it => { if (it.th) map[it.th] = it.en; }); } catch (e) {}
+    _k = { map, list: Object.keys(map).sort((a, b) => b.length - a.length) };
+    return _k;
+  }
+  function trText(s) {
+    if (LANG !== "en" || !s || !TH_RE.test(s)) return s;
+    const { map, list } = keys();
+    const lead = s.match(/^\s*/)[0], trail = s.match(/\s*$/)[0], core = s.trim();
+    if (map[core] != null) return lead + map[core] + trail;
+    const parts = core.split(/\s+\/\s+/);
+    if (parts.length === 2) {
+      const a = TH_RE.test(parts[0]), b = TH_RE.test(parts[1]);
+      if (a && !b) { const pre = parts[0].match(/^[^\u0E00-\u0E7FA-Za-z0-9]*/)[0]; return lead + pre + parts[1] + trail; }
+      if (!a && b) return lead + parts[0] + trail;
+    }
+    let out = core;
+    for (const k of list) {
+      if (out.indexOf(k) >= 0) out = out.split(k).join(map[k]);
+      if (!TH_RE.test(out)) break;
+    }
+    // If Thai is still left it is probably user data (names, comments) — keep it as typed.
+    return TH_RE.test(out) ? s : lead + out + trail;
+  }
+  const trMsg = m => String(m == null ? "" : m).split("\n").map(trText).join("\n");
+  window.trText = trText;
+
+  const SKIP = { SCRIPT: 1, STYLE: 1, TEXTAREA: 1 };
+  const ATTRS = ["placeholder", "title", "aria-label"];
+  function trAttrs(el) {
+    ATTRS.forEach(a => { const v = el.getAttribute && el.getAttribute(a); if (v && TH_RE.test(v)) { const t = trText(v); if (t !== v) el.setAttribute(a, t); } });
+  }
+  function trNode(n) {
+    if (LANG !== "en" || !n) return;
+    if (n.nodeType === 3) {
+      const p = n.parentNode;
+      if (p && !SKIP[p.nodeName] && !(p.closest && p.closest("[data-noi18n]"))) {
+        const v = trText(n.nodeValue); if (v !== n.nodeValue) n.nodeValue = v;
+      }
+      return;
+    }
+    if (n.nodeType !== 1 || SKIP[n.nodeName] || n.closest("[data-noi18n]")) return;
+    trAttrs(n);
+    n.querySelectorAll("[placeholder],[title],[aria-label]").forEach(trAttrs);
+    const w = document.createTreeWalker(n, NodeFilter.SHOW_TEXT);
+    const list = []; while (w.nextNode()) list.push(w.currentNode);
+    list.forEach(trNode);
+  }
+
+  // Wrap dialogs so confirm/alert messages follow the language too.
+  const _confirm = window.confirm.bind(window), _alert = window.alert.bind(window);
+  window.confirm = m => _confirm(trMsg(m));
+  window.alert = m => _alert(trMsg(m));
+
+  // Toggle button
+  const css = document.createElement("style");
+  css.textContent = `
+    #langToggle{display:inline-flex;border:1px solid rgba(245,241,230,.35);border-radius:999px;overflow:hidden;font:600 12px/1 system-ui,sans-serif;flex:none}
+    #langToggle button{background:transparent;color:inherit;border:0;padding:6px 10px;cursor:pointer;opacity:.7}
+    #langToggle button.on{background:#F5F1E6;color:#1d2b26;opacity:1}
+    #langToggle.floating{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:12px;z-index:120;background:#1d2b26;color:#F5F1E6;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+    html[data-lang="en"] .itxt .th, html[data-lang="en"] .names .n2 { display:none; }
+  `;
+  document.head.appendChild(css);
+  const tg = document.createElement("div");
+  tg.id = "langToggle"; tg.setAttribute("data-noi18n", "");
+  tg.innerHTML = '<button type="button" data-l="th">TH</button><button type="button" data-l="en">EN</button>';
+  function paintToggle() { tg.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.l === LANG)); }
+  function placeToggle() {
+    const bar = document.getElementById("topbar");
+    if (bar) {
+      if (tg.parentNode !== bar || tg.classList.contains("floating")) {
+        tg.classList.remove("floating");
+        const chip = document.getElementById("userchip");
+        if (chip && chip.parentNode) chip.parentNode.insertBefore(tg, chip); else bar.appendChild(tg);
+      }
+    } else if (tg.parentNode !== document.body || !tg.classList.contains("floating")) {
+      tg.classList.add("floating"); document.body.appendChild(tg);
+    }
+  }
+  tg.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b || b.dataset.l === LANG) return;
+    LANG = b.dataset.l;
+    try { localStorage.setItem("bbs_lang", LANG); } catch (err) {}
+    document.documentElement.lang = LANG; document.documentElement.dataset.lang = LANG;
+    paintToggle();
+    if (window.__bbs && window.__bbs.render) window.__bbs.render(); // rebuilds the page in Thai; EN is applied by the observer
+    trNode(document.body); placeToggle();
+  });
+
+  let busy = false;
+  const obs = new MutationObserver(ms => {
+    if (busy) return; busy = true;
+    try {
+      if (LANG === "en") ms.forEach(m => {
+        if (m.type === "characterData") trNode(m.target);
+        else m.addedNodes.forEach(trNode);
+      });
+      placeToggle();
+    } finally { busy = false; }
+  });
+  function start() {
+    document.documentElement.lang = LANG; document.documentElement.dataset.lang = LANG;
+    paintToggle(); placeToggle(); trNode(document.body);
+    obs.observe(document.body, { childList: true, subtree: true, characterData: true });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
 })();
 </script>
 </body>
