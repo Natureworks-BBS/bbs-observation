@@ -899,8 +899,7 @@ function renderLogin() {
         <div class="field"><label class="field-label">อีเมล / Email</label><input type="text" id="a_email" autocomplete="email" inputmode="email"></div>
         <div class="field"><label class="field-label">รหัสผ่าน / Password</label><input type="password" id="a_pass" autocomplete="${reg ? "new-password" : "current-password"}"></div>
         <button class="btn primary" id="a_go" style="width:100%;justify-content:center;padding:11px;">${reg ? "สมัครสมาชิก / Register" : "เข้าสู่ระบบ / Sign in"}</button>
-        <div class="orline"><span>หรือ</span></div>
-        <button class="btn" id="a_google" style="width:100%;justify-content:center;padding:10px;">ดำเนินการต่อด้วย Google</button>
+        ${!reg ? `<div class="hint" style="margin-top:12px;font-size:12.5px;line-height:1.5;color:#5b6b64;background:#f4f6f5;border-radius:8px;padding:8px 10px;">เคยเข้าด้วยปุ่ม Google? กรอกอีเมล Gmail ของคุณ แล้วกด "ลืมรหัสผ่าน?" เพื่อตั้งรหัสผ่าน / Used Google sign-in before? Enter your Gmail and press "Forgot password?" to set a password.</div>` : ``}
         ${!reg ? `<div style="text-align:center;margin-top:12px;"><button class="btn ghost small" id="a_forgot">ลืมรหัสผ่าน?</button></div>` : ``}
         <div style="text-align:center;margin-top:8px;"><button class="btn small" id="a_guide">📘 คู่มือการใช้งาน / Guide</button></div>
       </div>
@@ -928,9 +927,6 @@ function renderLogin() {
   };
   document.getElementById("a_go").onclick = go;
   document.getElementById("a_pass").addEventListener("keydown", e => { if (e.key === "Enter") go(); });
-  document.getElementById("a_google").onclick = async () => {
-    try { await fbAuth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); } catch (e) { toast(fbErr(e)); }
-  };
   document.getElementById("a_guide").onclick = () => { S.view = "guide"; render(); };
   const fg = document.getElementById("a_forgot");
   if (fg) fg.onclick = async () => {
@@ -1878,7 +1874,7 @@ function guideBodyHtml() {
       <ol>
         <li>เปิดลิงก์ของระบบที่ได้รับ (ใช้ได้ทั้งมือถือและคอมพิวเตอร์)</li>
         <li><b>ครั้งแรก:</b> กดแท็บ <b>"สมัครสมาชิก"</b> → กรอก ชื่อ-นามสกุล, อีเมล, รหัสผ่าน (อย่างน้อย 6 ตัวอักษร) → กด "สมัครสมาชิก"</li>
-        <li><b>เคยสมัครแล้ว:</b> กรอกอีเมล+รหัสผ่าน → "เข้าสู่ระบบ" หรือกด "ดำเนินการต่อด้วย Google" ถ้าใช้ Gmail</li>
+        <li><b>เคยสมัครแล้ว:</b> กรอกอีเมล+รหัสผ่าน → "เข้าสู่ระบบ"</li>
         <li>ลืมรหัสผ่าน: กรอกอีเมล แล้วกด "ลืมรหัสผ่าน?" ระบบจะส่งลิงก์ตั้งรหัสใหม่ไปที่อีเมล</li>
       </ol>
       <div class="gtip">💡 ใช้อีเมลจริงที่เข้าถึงได้ เพื่อกู้รหัสผ่านได้เมื่อจำเป็น</div>`)}
